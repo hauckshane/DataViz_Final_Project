@@ -14,8 +14,31 @@ library(tidyverse)
 ```
 
 ```{r}
-epl_standard <- read_csv("data/epl_standard.csv", 
+library(readxl)
+epl_standard <- read_excel("data/epl_standard.xlsx", 
     skip = 1)
 epl_standard
+```
+
+```{r}
+epl_shooting <- read_csv("data/epl_shooting.csv", 
+    skip = 1)
+epl_shooting
+```
+
+```{r}
+epl_passing <- read_csv("data/epl_passing.csv")
+```
+
+```{r}
+epl_passtype <- read_csv("data/epl_passtypes.csv",
+                         skip = 1)
+epl_passtype
+```
+
+```{r}
+epl_goalandshotcreation <- read_csv("data/epl_goalandshotcreation.csv",
+                                    skip = 1)
+epl_goalandshotcreation
 ```
 
