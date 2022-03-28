@@ -8,4 +8,4 @@ Fixed an error I was getting with the dataset in r where when names had accents 
 
 ## March 23 end of class
 
-Worked on getting majority of player datasets into data folder and began cleaning it and getting it into r,
+Worked on getting majority of player datasets into data folder and began cleaning it and getting it into r, 

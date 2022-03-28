@@ -14,31 +14,87 @@ library(tidyverse)
 ```
 
 ```{r}
-library(readxl)
-epl_standard <- read_excel("data/epl_standard.xlsx", 
-    skip = 1)
+epl_standard <- read_csv("data/epl_standard.csv", skip = 1) %>% 
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
 epl_standard
 ```
 
 ```{r}
-epl_shooting <- read_csv("data/epl_shooting.csv", 
-    skip = 1)
+epl_shooting <- read_csv("data/epl_shooting.csv", skip = 1) %>% 
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
 epl_shooting
 ```
 
 ```{r}
-epl_passing <- read_csv("data/epl_passing.csv")
+epl_passing <- read_csv("data/epl_passing.csv") %>% 
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
+epl_passing
 ```
 
 ```{r}
-epl_passtype <- read_csv("data/epl_passtypes.csv",
-                         skip = 1)
+epl_passtype <- read_csv("data/epl_passtypes.csv", skip = 1) %>% 
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
 epl_passtype
 ```
 
 ```{r}
-epl_goalandshotcreation <- read_csv("data/epl_goalandshotcreation.csv",
-                                    skip = 1)
-epl_goalandshotcreation
+epl_goalandshotcreation <- read_csv("data/epl_goalandshotcreation.csv", skip = 1) %>% 
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
+epl_goalandshotcreation 
+```
+
+```{r}
+epl_defensiveactions <- read_csv("data/epl_defensiveactions.csv", skip = 1) %>% 
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
+epl_defensiveactions
+```
+
+```{r}
+epl_possesion <- read_csv("data/epl_possesion.csv", skip = 1) %>%
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
+epl_possesion
+```
+
+```{r}
+epl_miscellaneous <- read_csv("data/epl_miscellaneous.csv", skip = 1) %>% 
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
+epl_miscellaneous
+```
+
+```{r}
+epl_goalkeeper <- read_csv("data/epl_goalkeeper.csv", skip = 1) %>% 
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
+epl_goalkeeper
+```
+
+```{r}
+epl_goalkeeperadvanced <- read_csv("data/epl_goalkeeperadvanced.csv", skip = 1) %>% 
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
+epl_goalkeeperadvanced
+```
+
+```{r}
+players_22 <- read_csv("data/players_22.csv") %>% filter(league_name == "English Premier League")
+write.csv(players_22, "data\\epl_player_22.csv", row.names = FALSE)
 ```
 
