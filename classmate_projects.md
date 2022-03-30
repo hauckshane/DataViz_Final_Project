@@ -8,4 +8,8 @@ Nick: Using real estate data from Boston to create something that will help user
 
 ## March 28
 
-Kaden: Looking at NHL hockey data of a specific team looking at power play statistics and how more shots during a power play usually leads to more goals.  
+Kaden: Looking at NHL hockey data of a specific team looking at power play statistics and how more shots during a power play usually leads to more goals.   
+
+## March 30
+
+Charlie: Working on r package to scrape and help users create graphs of ECAC hockey stats.

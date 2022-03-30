@@ -25,8 +25,14 @@ epl_standard
 epl_shooting <- read_csv("data/epl_shooting.csv", skip = 1) %>% 
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
-  select(-c(irrel))
+  select(-c(irrel)) %>%
+  select(-c(Rk, Born, `90s`, FK, PK, PKatt))
 epl_shooting
+
+epl_shooting_max <- epl_shooting %>% drop_na() %>%
+  summarise_if(is.numeric, max)
+epl_shooting_min <- epl_shooting %>% drop_na() %>%
+  summarise_if(is.numeric, min)
 ```
 
 ```{r}
@@ -139,6 +145,20 @@ radarchart(epl_standard_full, pcol= "green", pfcol = rgb(0.2,0.5,0.5,0.75),
            vlcex =0.8)
 ```
 
+```{r}
+epl_shoot_player <- epl_shooting %>% filter(Name == "Harry Kane")
+
+
+
+epl_shoot_half <- full_join(epl_shooting_min, epl_shoot_player)
+epl_shoot_full <- full_join(epl_shooting_max, epl_shoot_half) %>%
+  select(-c(Age, Squad, Pos, Nation, Name))
+
+
+radarchart(epl_shoot_full, pcol= "green", pfcol = rgb(0.2,0.5,0.5,0.75), 
+            cglty = 1, axislabcol = "red", cglwd = 1,
+           vlcex =0.8)
+```
 
 ```{r}
 # Library
