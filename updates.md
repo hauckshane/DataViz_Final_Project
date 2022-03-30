@@ -16,4 +16,8 @@ Worked on loading the different categories of data into r and worked on tidying 
 
 ## March 28 end of class
 
-Mainly worked on learning to create radar charts. Also continued to work on fixing the differing datasets so they have matching names.   
+Mainly worked on learning to create radar charts. Also continued to work on fixing the differing datasets so they have matching names.    
+
+## March 30 beginning of class
+
+Worked on creating the backbone of my shinyapp. Made it so you can select a player and it will show you their individual radar chart. Also continued to work on fixing the differing datasets so they have matching names in excel.

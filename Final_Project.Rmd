@@ -14,7 +14,7 @@ library(tidyverse)
 ```
 
 ```{r}
-epl_standard <- read_csv("data/epl_standard.csv", skip = 1) %>% 
+epl_standard <- read_csv("data/epl_standard.csv") %>% 
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
@@ -163,7 +163,7 @@ radarchart( data  , axistype=1 ,
     pcol=colors_border , pfcol=colors_in , plwd=4 , plty=1,
     #custom the grid
     cglcol="grey", cglty=1, axislabcol="grey", caxislabels=seq(0,20,5), cglwd=0.8,
-    #custom labels 
+    #custom labels  
     vlcex=0.8 
     )
 
@@ -173,7 +173,7 @@ legend(x=0.7, y=1, legend = rownames(data[-c(1,2),]), bty = "n", pch=20 , col=co
 
 
 ```{r}
-epl_standard_player <- epl_standard %>% filter(Name == "Max Aarons" | Name == "Luke Ayling") 
+epl_standard_player <- epl_standard %>% filter(Name == "Ivan Toney" | Name == "Max Aarons") 
 
 epl_standard_max <- epl_standard %>% summarise_if(is.numeric, max)
 epl_standard_min <- epl_standard %>% summarise_if(is.numeric, min)
@@ -186,4 +186,49 @@ epl_standard_full <- full_join(epl_standard_max, epl_standard_half) %>%
 radarchart(epl_standard_full)
 ```
 
+
+```{r}
+library(shiny)
+
+ui <- fluidPage(
+  sidebarLayout(sidebarPanel(
+    selectizeInput("playerchoice",
+                   label = "Choose a Player",
+                   choices = levels(factor(epl_standard$Name)))
+    
+  ),
+  mainPanel(plotOutput("radarChart"))
+  )
+)
+
+server <- function(input, output, session) {
+  
+  epl_standard_player <- 
+    reactive({
+      epl_standard %>% filter(Name == input$playerchoice)
+    })
+  
+  epl_standard_half <- 
+    reactive({
+      full_join(epl_standard_min, epl_standard_player())
+    })
+  
+  epl_standard_full <- 
+    reactive({
+      full_join(epl_standard_max, epl_standard_half()) %>%
+        select(-c(Born, Name, Nation, Pos, Squad, Age))
+    })
+  
+  radar_chart <- 
+    reactive({
+      radarchart(epl_standard_full())
+    })
+  
+  output$radarChart <- renderPlot({
+    radar_chart()
+  })
+}
+
+shinyApp(ui, server)
+```
 
