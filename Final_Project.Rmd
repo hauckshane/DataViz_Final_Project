@@ -40,7 +40,7 @@ epl_passing <- read_csv("data/epl_passing.csv") %>%
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
-epl_passing
+epl_passing 
 ```
 
 ```{r}
@@ -158,7 +158,13 @@ epl_shoot_full <- full_join(epl_shooting_max, epl_shoot_half) %>%
 radarchart(epl_shoot_full, pcol= "green", pfcol = rgb(0.2,0.5,0.5,0.75), 
             cglty = 1, axislabcol = "red", cglwd = 1,
            vlcex =0.8)
+
+library(plotly)
+
+
 ```
+
+
 
 ```{r}
 # Library
@@ -206,6 +212,17 @@ epl_standard_full <- full_join(epl_standard_max, epl_standard_half) %>%
 radarchart(epl_standard_full)
 ```
 
+```{r}
+test_player <- epl_standard %>% filter(Name == "Ivan Toney")
+epl_standard_max <- epl_standard %>% summarise_if(is.numeric, max)
+epl_standard_min <- epl_standard %>% summarise_if(is.numeric, min)
+
+epl_standard_half <- full_join(epl_standard_min, test_player)
+epl_standard_full <- full_join(epl_standard_max, epl_standard_half) %>%
+  select(-c(Born, Name, Nation, Pos, Squad, Age))
+test <- radarchart(epl_standard_full)
+```
+
 
 ```{r}
 library(shiny)
@@ -251,4 +268,137 @@ server <- function(input, output, session) {
 
 shinyApp(ui, server)
 ```
+
+
+
+```{r}
+library(plotly)
+
+fig <- plot_ly(
+    type = 'scatterpolar',
+    r = c(39, 28, 8, 7, 28),
+    theta = c('A','B','C', 'D', 'E'),
+    fill = 'toself'
+  ) 
+fig <- fig %>%
+  layout(
+    polar = list(
+      radialaxis = list(
+        visible = T,
+        range = c(0,100)
+      )
+    ),
+    showlegend = T
+  )
+
+fig
+
+fig2 <- plot_ly(
+  type = 'scatterpolar',
+  r = epl_standard %>% filter(Name == "Phil Foden") %>% select(where(is.numeric)) %>% select(-c(Born, Rk)) ,
+  theta = colnames(epl_standard %>% select(-c(Born, Rk)) %>% select(where(is.numeric))),
+  fill = 'toself'
+)
+fig2 <- fig2 %>%
+  layout(
+    polar = list(
+      radialaxis = list(
+        range = c(0, epl_standard_max)
+      )
+    )
+  )
+fig2
+```
+
+```{r}
+library(ggradar)
+library(dplyr)
+library(scales)
+library(tibble)
+
+mtcars_radar <- mtcars %>%
+  as_tibble(rownames = "group") %>%
+  mutate_at(vars(-group), rescale) %>%
+  tail(4) %>%
+  select(1:10)
+mtcars_radar
+ggradar(mtcars_radar, interactive = TRUE)
+
+```
+
+```{r}
+library(ggiraphExtra)
+
+require(ggplot2)
+require(ggiraph)
+require(plyr)
+require(reshape2)
+require(moonBook)
+require(sjmisc)
+ggRadar(data=iris,aes(group=Species))
+ggRadar(data=mtcars,interactive=TRUE)
+ggRadar(data=mtcars,aes(colour=am,facet=cyl),interactive=TRUE)
+ggRadar(data=acs,aes(colour=Dx,facet=Dx))
+ggRadar(iris,aes(x=c(Sepal.Length,Sepal.Width,Petal.Length,Petal.Width)), interactive = TRUE)
+```
+
+```{r}
+mtcars_radar <- mtcars %>%
+ as_tibble(rownames = "group") %>%
+   mutate_at(vars(-group), rescale) %>%
+   tail(4) %>%
+   select(1:10)
+ mtcars_radar
+ ggradar(mtcars_radar)
+
+```
+
+
+```{r}
+mtcars_theta = c('drat','wt','qsec','vs','am','drat')
+
+
+p <- plot_ly(
+  type = 'scatterpolar',
+  fill = 'toself'
+) %>%
+  add_trace(
+    r = c(0.359447,0.5259524,0.0119047, 0, 1, 0.359447),
+    theta = mtcars_theta,
+    name = 'Maserati Bora'
+  ) %>%
+  add_trace(
+    r = c(0.6221198, 0.3239581, 0.4880952, 1, 1, 0.6221198),
+    theta = mtcars_theta,
+    name = 'Volvo 142E'
+  ) %>%
+  layout(
+    polar = list(
+      radialaxis = list(
+        visible = TRUE,
+        range = c(0,1)
+      )
+    )
+  )
+ 
+p
+```
+
+```{r}
+library(plotly)
+library(fmsb)
+
+data <- as.data.frame(matrix( sample( 2:20 , 10 , replace=T) , ncol=10))
+colnames(data) <- c("math" , "english" , "biology" , "music" , "R-coding", "data-viz" , "french" , "physic", "statistic", "sport" )
+
+data <- rbind(rep(20,10) , rep(0,10) , data)
+
+p <- radarchart( data  , axistype=1 , 
+    pcol=rgb(0.2,0.5,0.5,0.9) , pfcol=rgb(0.2,0.5,0.5,0.5) , plwd=4 , 
+    cglcol="grey", cglty=1, axislabcol="grey", caxislabels=seq(0,20,5), cglwd=0.8,
+    vlcex=0.8 
+    )
+ggplotly(p)
+```
+
 

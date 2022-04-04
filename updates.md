@@ -24,4 +24,4 @@ Worked on creating the backbone of my shinyapp. Made it so you can select a play
 
 ## March 30 end of class
 
-Worked on deciding what variables to use for different sub charts and began creating shooting radar chart. Also finished fixing previous issue in datasets with differing names.
+Worked on deciding what variables to use for different sub charts and began creating shooting radar chart. Also finished fixing previous issue in datasets with differing names. 
