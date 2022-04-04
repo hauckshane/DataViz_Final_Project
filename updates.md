@@ -25,3 +25,11 @@ Worked on creating the backbone of my shinyapp. Made it so you can select a play
 ## March 30 end of class
 
 Worked on deciding what variables to use for different sub charts and began creating shooting radar chart. Also finished fixing previous issue in datasets with differing names. 
+
+## April 4 beginning of class
+
+Worked on trying to figure out a way to make interactive radar charts. Found ways to make different charts interactive but there is unfortunatly no way to have an interactive chart with variables that have different scales. 
+
+## April 4 end of class
+
+Worked on getting per 90 minute stats for all datasets and had to fix various problems with datasets in excel.
