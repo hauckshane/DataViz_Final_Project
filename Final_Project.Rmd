@@ -77,7 +77,7 @@ radarchart(epl_shoot_full, pcol= "green", pfcol = rgb(0.2,0.5,0.5,0.75),
 epl_shooting_90_max <- epl_shooting_90 %>% 
   drop_na() %>%
   filter(`90s` >= 4) %>% 
-  summarise_if(is.numeric, max)
+  summarise_if(is.numeric, max )
 epl_shooting_90_min <- epl_shooting_90 %>% 
   drop_na() %>%
   filter(`90s` >= 4) %>%
@@ -127,11 +127,6 @@ epl_passtype_90
 ```
 
 ```{r}
-epl_passing_fill <- left_join(epl_passing, epl_passtype)
-```
-
-
-```{r}
 epl_goalandshotcreation <- read_csv("data/epl_goalandshotcreation.csv", skip = 1) %>% 
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
@@ -145,6 +140,43 @@ epl_goalandshotcreation_90 <- read_csv("data/epl_goalandshotcreation_90.csv", sk
 epl_goalandshotcreation_90 
 ```
  
+```{r}
+epl_passing_fill <- left_join(epl_passing, epl_passtype)
+epl_passing_comb <- left_join(epl_passing_fill, epl_goalandshotcreation) %>%
+  rename(`1/3` = `3-Jan`) %>%
+  mutate(SCA_passes = SCA_PassLive + SCA_PassDead,
+         GCA_passes = GCA_PassLive + GCA_PassDead)
+
+epl_passing_main <- epl_passing_comb %>% 
+  select(c(1:11, 14,16,17,19,20,22:28,30,35:38, 72,73))
+
+epl_passing_main_max <- epl_passing_main %>% 
+  drop_na() %>%
+  filter(`90s` >= 4,
+         Pos != "GK") %>% 
+  summarise_if(is.numeric, max)
+epl_passing_main_min <- epl_passing_main %>% 
+  drop_na() %>%
+  filter(`90s` >= 4,
+         Pos != "GK") %>%
+  summarise_if(is.numeric, min)
+
+epl_pass_player <- epl_passing_main %>% filter(Name == "Kevin De Bruyne")
+
+epl_pass_main_half <- full_join(epl_passing_main_min, epl_pass_player)
+
+epl_pass_full <- full_join(epl_passing_main_max, epl_pass_main_half) %>%
+  select(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`))
+
+epl_pass_full %>% slice(0:2) %>%
+  mutate(`A-xA` = fct_reorder(`A-xA`, `A-xA`))
+
+
+radarchart(epl_pass_full, pcol= "green", pfcol = rgb(0.2,0.5,0.5,0.75), 
+            cglty = 1, axislabcol = "red", cglwd = 1,
+           vlcex =0.8)
+```
+
 ```{r}
 epl_defensiveactions <- read_csv("data/epl_defensiveactions.csv", skip = 1) %>% 
   select(-c(3, Matches)) %>%

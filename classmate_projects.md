@@ -15,5 +15,9 @@ Kaden: Looking at NHL hockey data of a specific team looking at power play stati
 Charlie: Working on r package to scrape and help users create graphs of ECAC hockey stats. 
 
 ## April 4
-
+ 
 Grace: Creating an interactive map that shows the different counties in California and a unit of water.
+
+## April 6
+
+Maddox: Creating a leaflet shiny app that shows the different maternity hospitals.

@@ -22,7 +22,7 @@ Mainly worked on learning to create radar charts. Also continued to work on fixi
 
 Worked on creating the backbone of my shinyapp. Made it so you can select a player and it will show you their individual radar chart. Also continued to work on fixing the differing datasets so they have matching names in excel. 
 
-## March 30 end of class
+## March 30 end of class 
 
 Worked on deciding what variables to use for different sub charts and began creating shooting radar chart. Also finished fixing previous issue in datasets with differing names. 
 
