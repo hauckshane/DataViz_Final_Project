@@ -3,7 +3,7 @@
 Searched and found a website featuring datasets containing advanced statistics of European Football. 
 
 ## March 23 beginning of class
- 
+  
 Fixed an error I was getting with the dataset in r where when names had accents in them it would put a question mark in r. Fixed this in excel.
 
 ## March 23 end of class
@@ -33,3 +33,7 @@ Worked on trying to figure out a way to make interactive radar charts. Found way
 ## April 4 end of class
 
 Worked on getting per 90 minute stats for all datasets and had to fix various problems with datasets in excel.
+
+## April 6 beginning of class
+
+Fixed and got all per 90 minute datasets into r and worked on making shooting and shooting per 90 radar charts.

@@ -18,23 +18,85 @@ library(fmsb)
 epl_standard <- read_csv("data/epl_standard.csv") %>% 
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
-  select(-c(irrel))
+  select(-c(irrel)) %>%
+  select(-c(`Gls/90`, `Ast/90`, `G+A/90`, `G-PK/90`, `G+A-PK/90`, `xG/90`, `xA/90`, `xG+xA/90`, `npxG/90`, `npxG+xA/90`)) %>% 
+  mutate(`G+A` = Gls + Ast)
 epl_standard
+
+epl_standard_90 <- read_csv("data/epl_standard_90.csv") %>% 
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel)) 
+epl_standard_90
 ```
+
+```{r}
+epl_standard %>% 
+  summarise(`25perc_90s` = quantile(`90s`, c(0.25)))
+```
+
 
 ```{r}
 epl_shooting <- read_csv("data/epl_shooting.csv", skip = 1) %>% 
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel)) %>%
-  select(-c(Rk, Born, `90s`, FK, PK, PKatt))
+  select(-c(`Sh/90`, `SoT/90`))
 epl_shooting
 
-epl_shooting_max <- epl_shooting %>% drop_na() %>%
+epl_shooting_90 <- read_csv("data/epl_shooting_90.csv", skip = 1) %>% 
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel)) %>%
+  select(-c(`Sh/90`, `SoT/90`))
+epl_shooting_90
+
+epl_shooting_max <- epl_shooting %>% 
+  drop_na() %>%
+  filter(`90s` >= 4) %>% 
   summarise_if(is.numeric, max)
-epl_shooting_min <- epl_shooting %>% drop_na() %>%
-  summarise_if(is.numeric, min)
+epl_shooting_min <- epl_shooting %>% 
+  drop_na() %>%
+  filter(`90s` >= 4) %>%
+  summarise_if(is.numeric, min) 
+
+epl_shoot_player <- epl_shooting %>% filter(Name == "Marcus Rashford")
+
+
+
+epl_shoot_half <- full_join(epl_shooting_min, epl_shoot_player)
+epl_shoot_full <- full_join(epl_shooting_max, epl_shoot_half) %>%
+  select(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`, FK, PKatt, PK))
+
+
+radarchart(epl_shoot_full, pcol= "green", pfcol = rgb(0.2,0.5,0.5,0.75), 
+            cglty = 1, axislabcol = "red", cglwd = 1,
+           vlcex =0.8)
+
+
+epl_shooting_90_max <- epl_shooting_90 %>% 
+  drop_na() %>%
+  filter(`90s` >= 4) %>% 
+  summarise_if(is.numeric, max)
+epl_shooting_90_min <- epl_shooting_90 %>% 
+  drop_na() %>%
+  filter(`90s` >= 4) %>%
+  summarise_if(is.numeric, min) 
+
+epl_shoot_90_player <- epl_shooting_90 %>% filter(Name == "Marcus Rashford")
+
+
+
+epl_shoot_90_half <- full_join(epl_shooting_90_min, epl_shoot_90_player)
+epl_shoot_90_full <- full_join(epl_shooting_90_max, epl_shoot_90_half) %>%
+  select(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`, FK, PKatt, PK))
+
+
+radarchart(epl_shoot_90_full, pcol= "green", pfcol = rgb(0.2,0.5,0.5,0.75), 
+            cglty = 1, axislabcol = "red", cglwd = 1,
+           vlcex =0.8)
 ```
+
 
 ```{r}
 epl_passing <- read_csv("data/epl_passing.csv") %>% 
@@ -42,6 +104,12 @@ epl_passing <- read_csv("data/epl_passing.csv") %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
 epl_passing 
+
+epl_passing_90 <- read_csv("data/epl_passing_90.csv", skip = 1) %>% 
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
+epl_passing_90 
 ```
 
 ```{r}
@@ -50,7 +118,18 @@ epl_passtype <- read_csv("data/epl_passtypes.csv", skip = 1) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
 epl_passtype
+
+epl_passtype_90 <- read_csv("data/epl_passtypes_90.csv", skip = 1) %>% 
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
+epl_passtype_90
 ```
+
+```{r}
+epl_passing_fill <- left_join(epl_passing, epl_passtype)
+```
+
 
 ```{r}
 epl_goalandshotcreation <- read_csv("data/epl_goalandshotcreation.csv", skip = 1) %>% 
@@ -58,14 +137,26 @@ epl_goalandshotcreation <- read_csv("data/epl_goalandshotcreation.csv", skip = 1
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
 epl_goalandshotcreation 
-```
 
+epl_goalandshotcreation_90 <- read_csv("data/epl_goalandshotcreation_90.csv", skip = 1) %>% 
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
+epl_goalandshotcreation_90 
+```
+ 
 ```{r}
 epl_defensiveactions <- read_csv("data/epl_defensiveactions.csv", skip = 1) %>% 
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
 epl_defensiveactions
+
+epl_defensiveactions_90 <- read_csv("data/epl_defensiveactions_90.csv", skip = 1) %>% 
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
+epl_defensiveactions_90
 ``` 
 
 ```{r}
@@ -74,6 +165,12 @@ epl_possesion <- read_csv("data/epl_possesion.csv", skip = 1) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
 epl_possesion
+
+epl_possesion_90 <- read_csv("data/epl_possesion_90.csv", skip = 1) %>%
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
+epl_possesion_90
 ```
 
 ```{r}
@@ -82,6 +179,12 @@ epl_miscellaneous <- read_csv("data/epl_miscellaneous.csv", skip = 1) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
 epl_miscellaneous
+
+epl_miscellaneous_90 <- read_csv("data/epl_miscellaneous_90.csv", skip = 1) %>% 
+  select(-c(3, Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
+epl_miscellaneous_90
 ```
 
 ```{r}
@@ -90,6 +193,12 @@ epl_goalkeeper <- read_csv("data/epl_goalkeeper.csv", skip = 1) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
 epl_goalkeeper
+
+epl_goalkeeper_90 <- read_csv("data/epl_goalkeeper_90.csv", skip = 1) %>% 
+  select(-c(Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
+epl_goalkeeper_90
 ```
 
 ```{r}
@@ -98,6 +207,12 @@ epl_goalkeeperadvanced <- read_csv("data/epl_goalkeeperadvanced.csv", skip = 1) 
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
 epl_goalkeeperadvanced
+
+epl_goalkeeperadvanced_90 <- read_csv("data/epl_goalkeeperadvanced_90.csv", skip = 1) %>% 
+  select(-c(Matches)) %>%
+  separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
+  select(-c(irrel))
+epl_goalkeeperadvanced_90
 ```
 
 
@@ -131,21 +246,7 @@ radarchart(epl_standard_full, pcol= "green", pfcol = rgb(0.2,0.5,0.5,0.75),
            vlcex =0.8)
 ```
 
-```{r}
-epl_shoot_player <- epl_shooting %>% filter(Name == "Harry Kane")
 
-
-
-epl_shoot_half <- full_join(epl_shooting_min, epl_shoot_player)
-epl_shoot_full <- full_join(epl_shooting_max, epl_shoot_half) %>%
-  select(-c(Age, Squad, Pos, Nation, Name))
-
-
-radarchart(epl_shoot_full, pcol= "green", pfcol = rgb(0.2,0.5,0.5,0.75), 
-            cglty = 1, axislabcol = "red", cglwd = 1,
-           vlcex =0.8)
-
-```
 
 
 
