@@ -13,7 +13,7 @@ Worked on getting majority of player datasets into data folder and began cleanin
 ## March 28 beginning of class
 
 Worked on loading the different categories of data into r and worked on tidying issues within all the datasets. Also found another dataset that will contain more subjective football data and began fixing an issue of the names being different in the differing datasets.
-
+ 
 ## March 28 end of class
 
 Mainly worked on learning to create radar charts. Also continued to work on fixing the differing datasets so they have matching names.    
@@ -37,3 +37,7 @@ Worked on getting per 90 minute stats for all datasets and had to fix various pr
 ## April 6 beginning of class
 
 Fixed and got all per 90 minute datasets into r and worked on making shooting and shooting per 90 radar charts.
+
+## April 6 end of class
+
+Worked on creating passing radar chart.
