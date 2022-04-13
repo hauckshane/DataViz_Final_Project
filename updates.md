@@ -41,3 +41,11 @@ Fixed and got all per 90 minute datasets into r and worked on making shooting an
 ## April 6 end of class
 
 Worked on creating passing radar chart.
+
+## April 11 
+
+Figured out how to make interactive radar charts with the highcharter package and then created plots for passing and defensive stats (both total and per 90 minutes).
+
+## April 13
+
+Created charts for shooting and dribbling stats (both total and per 90) and also learned how to add another interactive point to the chart that will later be used to give a written description of each variable.
