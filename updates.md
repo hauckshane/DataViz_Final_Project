@@ -44,8 +44,12 @@ Worked on creating passing radar chart.
 
 ## April 11 
 
-Figured out how to make interactive radar charts with the highcharter package and then created plots for passing and defensive stats (both total and per 90 minutes).
+Figured out how to make interactive radar charts with the highcharter package and then created plots for passing and defensive stats (both total and per 90 minutes). 
 
 ## April 13
 
 Created charts for shooting and dribbling stats (both total and per 90) and also learned how to add another interactive point to the chart that will later be used to give a written description of each variable.
+
+## April 18 beginning of class
+
+I added interactive points to each chart to each of the charts and made charts (both total and 90) for for goalkeeping stats. Also made tables for each stat and began to load in descriptions of the variables and added them to the charts so when you hover over a variable it displays a description.

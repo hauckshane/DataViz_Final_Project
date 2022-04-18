@@ -16,7 +16,16 @@ library(scales)
 library(plotly)
 library(highcharter)
 options(highcharter.theme = hc_theme_smpl(tooltip = list(valueDecimals = 2)))
+library(knitr)
 ```
+
+```{r}
+epl_player_22 <- read_csv("data/epl_player_22.csv") %>% separate(player_positions, into = c("Pos1", "Pos2", "Pos3"), remove = FALSE)
+epl_players <- epl_player_22 %>% select(c(4, 6:9, 12:17, 19, 23, 26, 28, 32, 110, 111, 114))
+
+view(left_join(epl_standard, epl_players))
+```
+
 
 ```{r}
 epl_standard <- read_csv("data/epl_standard.csv") %>% 
@@ -54,6 +63,8 @@ epl_shooting_90 <- read_csv("data/epl_shooting_90.csv", skip = 1) %>%
   select(-c(irrel)) %>%
   select(-c(`Sh/90`, `SoT/90`))
 epl_shooting_90
+
+shooting_descr <- read_csv("data/shooting_descr.csv")
 ```
 
 ```{r}
@@ -68,7 +79,7 @@ epl_shooting_min <- epl_shooting %>%
          Pos != "GK") %>%
   summarise_if(is.numeric, min) 
 
-epl_shoot_player <- epl_shooting %>% filter(Name == "Harry Maguire")
+epl_shoot_player <- epl_shooting %>% filter(Name == "Harry Kane")
 
 epl_shooting_max_min <- bind_rows(epl_shooting_max, epl_shooting_min)
 
@@ -83,39 +94,71 @@ epl_shoot_full_scaled <- epl_shoot_full %>% mutate(type = c("max", "min","player
   pivot_wider(names_from = variable, values_from = value.scaled) %>%
   mutate(`G-xG` = 1 - `G-xG`,
          `np:G-xG` = 1- `np:G-xG`) %>%
+  rename(Goals = Gls,
+         Shots = Sh,
+         `Shots on Target` = SoT,
+         `Shots on Target%` = `SoT%`,
+         `Goals/Shot` = `G/Sh`,
+         `Goals/Shot on Target` = `G/SoT`,
+         Distance = Dist,
+         `Non Penalty: xGoals/Shot` = `npxG/Sh`,
+         `Non Penalty: Goals - xGoals` = `np:G-xG`,
+         `Goals - xGoals` = `G-xG`,
+         `Non Penalty xGoals` = npxG,
+         `xGoals` = xG) %>%
   pivot_longer(c(1:ncol(epl_shoot_full) + 2), names_to = "variable", values_to = "value.scaled") %>%
   filter(!is.na(value.scaled)) %>%
-  arrange(match(variable, c("Gls",
-                            "Sh",
-                            "SoT",
-                            "SoT%",
-                            "G/Sh",
-                            "G/SoT",
-                            "Dist",
-                            "npxG/Sh",
-                            "np:G-xG",
-                            "G-xG",
-                            "npxG",
-                            "xG")))
+  arrange(match(variable, c("Goals",
+                            "Shots",
+                            "Goals/Shot",
+                            "Shots on Target",
+                            "Shots on Target%",
+                            "Goals/Shot on Target",
+                            "Distance",
+                            "Non Penalty: xGoals/Shot",
+                            "Non Penalty: Goals - xGoals",
+                            "Non Penalty xGoals",
+                            "Goals - xGoals",
+                            "xGoals"))) 
 
 
 shooting_plot <- highchart() %>%
   hc_chart(polar = TRUE, backgroundColor = "lightgrey") %>%
+  hc_add_series(data = shooting_descr,
+                mapping = hcaes(x = variable, y = 1),
+                type = "point",
+                color = "lightgrey",
+                tooltip = list(headerFormat = "", pointFormat = "{point.description}"),
+                animation = FALSE,
+                showInLegend = FALSE) %>%  
   hc_add_series(data = epl_shoot_full_scaled, 
                 mapping = hcaes(x = variable, y = value.scaled), 
                 type = "column",
                 color = rgb(0,255,100, maxColorValue = 255),
-                tooltip = list(pointFormat = "{point.variable}: {point.value}"),
-                showInLegend = FALSE) %>%
+                tooltip = list(headFormat = "{point.variable}", pointFormat = "{point.value}"),
+                showInLegend = FALSE,
+                pointWidth = 0.25,
+                borderColor = "darkgrey",
+                borderWidth = .2) %>%
   hc_xAxis(categories = epl_shoot_full_scaled$variable) %>%
-  hc_yAxis(visible = FALSE,
-           max = 1) %>%
+  hc_yAxis(tickAmount = 5,
+           max = 1,
+           tickPixelInterval = 0.01) %>%
   hc_title(text = epl_shoot_player$Name,
            align = "center") %>%
   hc_subtitle(text = epl_shoot_player$Squad,
               align = "center")
 shooting_plot
 ```
+
+```{r}
+epl_shoot_table <- epl_shoot_full_scaled %>% select(variable, value, value.scaled) %>%
+  rename(Stat = variable,
+         Value = value,
+         `Scaled Value` = value.scaled)
+kable(epl_shoot_table, digits = 3, title = "Shooting")
+```
+
 
 ```{r}
 epl_shooting_90_max <- epl_shooting_90 %>% 
@@ -127,7 +170,7 @@ epl_shooting_90_min <- epl_shooting_90 %>%
   filter(`90s` >= 4) %>%
   summarise_if(is.numeric, min) 
 
-epl_shoot_90_player <- epl_shooting_90 %>% filter(Name == "Sadio Mane")
+epl_shoot_90_player <- epl_shooting_90 %>% filter(Name == "Cristiano Ronaldo")
 
 epl_shooting_90_max_min <- bind_rows(epl_shooting_90_max, epl_shooting_90_min)
 
@@ -142,38 +185,69 @@ epl_shoot_90_full_scaled <- epl_shoot_90_full %>% mutate(type = c("max", "min","
   pivot_wider(names_from = variable, values_from = value.scaled) %>%
   mutate(`G-xG` = 1 - `G-xG`,
          `np:G-xG` = 1- `np:G-xG`) %>%
-  pivot_longer(c(1:ncol(epl_shoot_90_full) + 2), names_to = "variable", values_to = "value.scaled") %>%
+  rename(Goals = Gls,
+         Shots = Sh,
+         `Shots on Target` = SoT,
+         `Shots on Target%` = `SoT%`,
+         `Goals/Shot` = `G/Sh`,
+         `Goals/Shot on Target` = `G/SoT`,
+         Distance = Dist,
+         `Non Penalty: xGoals/Shot` = `npxG/Sh`,
+         `Non Penalty: Goals - xGoals` = `np:G-xG`,
+         `Goals - xGoals` = `G-xG`,
+         `Non Penalty xGoals` = npxG,
+         `xGoals` = xG) %>%
+  pivot_longer(c(1:ncol(epl_shoot_full) + 2), names_to = "variable", values_to = "value.scaled") %>%
   filter(!is.na(value.scaled)) %>%
-  arrange(match(variable, c("Gls",
-                            "Sh",
-                            "SoT",
-                            "SoT%",
-                            "G/Sh",
-                            "G/SoT",
-                            "Dist",
-                            "npxG/Sh",
-                            "np:G-xG",
-                            "G-xG",
-                            "npxG",
-                            "xG")))
+  arrange(match(variable, c("Goals",
+                            "Shots",
+                            "Goals/Shot",
+                            "Shots on Target",
+                            "Shots on Target%",
+                            "Goals/Shot on Target",
+                            "Distance",
+                            "Non Penalty: xGoals/Shot",
+                            "Non Penalty: Goals - xGoals",
+                            "Non Penalty xGoals",
+                            "Goals - xGoals",
+                            "xGoals"))) 
 
 
 shooting_90_plot <- highchart() %>%
   hc_chart(polar = TRUE, backgroundColor = "lightgrey") %>%
+   hc_add_series(data = epl_shoot_90_full_scaled,
+                mapping = hcaes(x = variable, y = 1),
+                type = "point",
+                tooltip = list(pointFormat = "{point.variable}"),
+                color = "lightgrey",
+                animation = FALSE,
+                showInLegend = FALSE) %>%  
   hc_add_series(data = epl_shoot_90_full_scaled, 
                 mapping = hcaes(x = variable, y = value.scaled), 
                 type = "column",
                 color = rgb(0,255,100, maxColorValue = 255),
                 tooltip = list(pointFormat = "{point.variable}: {point.value}"),
-                showInLegend = FALSE) %>%
+                showInLegend = FALSE,
+                pointWidth = 0.25,
+                borderColor = "darkgrey",
+                borderWidth = .2) %>%
   hc_xAxis(categories = epl_shoot_full_scaled$variable) %>%
   hc_yAxis(visible = FALSE,
-           max = 1) %>%
+           max = 1,
+           tickPixelInterval = 0.01) %>%
   hc_title(text = epl_shoot_90_player$Name,
            align = "center") %>%
   hc_subtitle(text = epl_shoot_90_player$Squad,
               align = "center")
 shooting_90_plot
+```
+
+```{r}
+epl_shoot_90_table <- epl_shoot_90_full_scaled %>% select(variable, value, value.scaled) %>%
+  rename(Stat = variable,
+         Value = value,
+         `Scaled Value` = value.scaled)
+kable(epl_shoot_90_table, digits = 3, title = "Shooting per 90 Minutes")
 ```
 
 
@@ -253,47 +327,87 @@ epl_pass_full_scaled <- epl_pass_full %>% mutate(type = c("max", "min","player")
   mutate(value.scaled = (value - min(value)) / (max(value) - min(value))) %>%
   filter(type == "player") %>%
   pivot_wider(names_from = variable, values_from = value.scaled) %>%
+  rename(Completions = `Cmp Total`,
+         Attempts = `Att Total`,
+         `Completion %` = `Cmp% Total`,
+         `Short Completions` = `Cmp Short`,
+         `Short Completion %` = `Cmp% Short`,
+         `Medium Completions` = `Cmp Medium`, 
+         `Medium Completion %` = `Cmp% Medium`,
+         `Long Completions` = `Cmp Long`,
+         `Long Completion %` = `Cmp% Long`,
+         `Progressive Completions` = Prog,
+         Switches = Sw,
+         `Pressure` = Press,
+         `Through Balls` = TB,
+         `Completions into Final 3rd` = `1/3`,
+         `Completions into Penalty Area` = PPA,
+         Crosses = Crs,
+         `Key Passes` = KP,
+         `Shot Creating Passes` = SCA_passes,
+         `Goal Creating Passes` = GCA_passes,
+         xAssists = xA,
+         Assists = Ast) %>%
   pivot_longer(c(3:23), names_to = "variable", values_to = "value.scaled") %>%
   filter(!is.na(value.scaled)) %>%
-  arrange(match(variable, c("Cmp Total", 
-                            "Att Total",
-                            "Cmp% Total",
-                            "Cmp Short",
-                            "Cmp% Short",
-                            "Cmp Medium",
-                            "Cmp% Medium",
-                            "Cmp Long",
-                            "Cmp% Long",
-                            "Prog",
-                            "Sw",
-                            "Press",
-                            "TB",
-                            "1/3",
-                            "PPA",
-                            "Crs",
-                            "KP",
-                            "SCA_passes",
-                            "GCA_passes",
-                            "xA",
-                            "Ast")))
+  arrange(match(variable, c("Completions", 
+                            "Attempts",
+                            "Completion %",
+                            "Short Completions",
+                            "Short Completion %",
+                            "Medium Completions",
+                            "Medium Completion %",
+                            "Long Completions",
+                            "Long Completion %",
+                            "Progressive Completions",
+                            "Switches",
+                            "Pressure",
+                            "Through Balls",
+                            "Completions into Final 3rd",
+                            "Completions into Penalty Area",
+                            "Crosses",
+                            "Key Passes",
+                            "Shot Creating Passes",
+                            "Goal Creating Passes",
+                            "xAssists",
+                            "Assists")))
   
 
 passing_plot <- highchart() %>%
   hc_chart(polar = TRUE, backgroundColor = "lightgrey") %>%
+  hc_add_series(data = epl_pass_full_scaled,
+                mapping = hcaes(x = variable, y = 1),
+                type = "point",
+                tooltip = list(pointFormat = "{point.variable}"),
+                color = "lightgrey",
+                animation = FALSE,
+                showInLegend = FALSE) %>%  
   hc_add_series(data = epl_pass_full_scaled, 
                 mapping = hcaes(x = variable, y = value.scaled), 
                 type = "column",
                 color = rgb(0,255,100, maxColorValue = 255),
                 tooltip = list(pointFormat = "{point.variable}: {point.value}"),
-                showInLegend = FALSE) %>%
+                showInLegend = FALSE,
+                pointWidth = 0.25,
+                borderColor = "darkgrey",
+                borderWidth = .2) %>%
   hc_xAxis(categories = epl_pass_full_scaled$variable) %>%
   hc_yAxis(visible = FALSE,
-           max = 1) %>%
+           max = 1,
+           tickPixelInterval = 0.01) %>%
   hc_title(text = epl_pass_player$Name,
            align = "center") %>%
   hc_subtitle(text = epl_pass_player$Squad,
               align = "center")
 passing_plot
+```
+
+```{r}
+epl_pass_table <- epl_pass_full_scaled %>% select(variable, value, value.scaled) %>%
+  rename(Stat = variable,
+         Value = value,
+         `Scaled Value` = value.scaled)
+kable(epl_pass_table, digits = 3, title = "Passing")
 ```
 
 
@@ -331,42 +445,74 @@ epl_pass_90_full_scaled <- epl_pass_90_full %>% mutate(type = c("max", "min","pl
   mutate(value.scaled = (value - min(value)) / (max(value) - min(value))) %>%
   filter(type == "player") %>%
   pivot_wider(names_from = variable, values_from = value.scaled) %>%
+  rename(Completions = `Cmp Total`,
+         Attempts = `Att Total`,
+         `Completion %` = `Cmp% Total`,
+         `Short Completions` = `Cmp Short`,
+         `Short Completion %` = `Cmp% Short`,
+         `Medium Completions` = `Cmp Medium`, 
+         `Medium Completion %` = `Cmp% Medium`,
+         `Long Completions` = `Cmp Long`,
+         `Long Completion %` = `Cmp% Long`,
+         `Progressive Completions` = Prog,
+         Switches = Sw,
+         `Pressure` = Press,
+         `Through Balls` = TB,
+         `Completions into Final 3rd` = `1/3`,
+         `Completions into Penalty Area` = PPA,
+         Crosses = Crs,
+         `Key Passes` = KP,
+         `Shot Creating Passes` = SCA_passes,
+         `Goal Creating Passes` = GCA_passes,
+         xAssists = xA,
+         Assists = Ast) %>%
   pivot_longer(c(3:23), names_to = "variable", values_to = "value.scaled") %>%
   filter(!is.na(value.scaled)) %>%
-  arrange(match(variable, c("Cmp Total", 
-                            "Att Total",
-                            "Cmp% Total",
-                            "Cmp Short",
-                            "Cmp% Short",
-                            "Cmp Medium",
-                            "Cmp% Medium",
-                            "Cmp Long",
-                            "Cmp% Long",
-                            "Prog",
-                            "Sw",
-                            "Press",
-                            "TB",
-                            "1/3",
-                            "PPA",
-                            "Crs",
-                            "KP",
-                            "SCA_passes",
-                            "GCA_passes",
-                            "xA",
-                            "Ast")))
+  arrange(match(variable, c("Completions", 
+                            "Attempts",
+                            "Completion %",
+                            "Short Completions",
+                            "Short Completion %",
+                            "Medium Completions",
+                            "Medium Completion %",
+                            "Long Completions",
+                            "Long Completion %",
+                            "Progressive Completions",
+                            "Switches",
+                            "Pressure",
+                            "Through Balls",
+                            "Completions into Final 3rd",
+                            "Completions into Penalty Area",
+                            "Crosses",
+                            "Key Passes",
+                            "Shot Creating Passes",
+                            "Goal Creating Passes",
+                            "xAssists",
+                            "Assists")))
   
 
 passing_90_plot <- highchart() %>%
   hc_chart(polar = TRUE, backgroundColor = "lightgrey") %>%
+   hc_add_series(data = epl_pass_90_full_scaled,
+                mapping = hcaes(x = variable, y = 1),
+                type = "point",
+                tooltip = list(pointFormat = "{point.variable}"),
+                color = "lightgrey",
+                animation = FALSE,
+                showInLegend = FALSE) %>%  
   hc_add_series(data = epl_pass_90_full_scaled, 
                 mapping = hcaes(x = variable, y = value.scaled), 
                 type = "column",
                 color = rgb(0,255,100, maxColorValue = 255),
                 tooltip = list(pointFormat = "{point.variable}: {point.value}"),
-                showInLegend = FALSE) %>%
+                showInLegend = FALSE,
+                pointWidth = 0.25,
+                borderColor = "darkgrey",
+                borderWidth = .2) %>%
   hc_xAxis(categories = epl_pass_full_scaled$variable) %>%
   hc_yAxis(visible = FALSE,
-           max = 1) %>%
+           max = 1,
+           tickPixelInterval = 0.01) %>%
   hc_title(text = epl_pass_90_player$Name,
            align = "center") %>%
   hc_subtitle(text = epl_pass_90_player$Squad,
@@ -374,8 +520,13 @@ passing_90_plot <- highchart() %>%
 passing_90_plot
 ```
 
-
-
+```{r}
+epl_pass_90_table <- epl_pass_90_full_scaled %>% select(variable, value, value.scaled) %>%
+  rename(Stat = variable,
+         Value = value,
+         `Scaled Value` = value.scaled)
+kable(epl_pass_90_table, digits = 3, title = "Passing per 90 Minutes")
+```
 
 ```{r}
 epl_defensiveactions <- read_csv("data/epl_defensiveactions.csv", skip = 1) %>% 
@@ -393,7 +544,7 @@ epl_defensiveactions_90
 
 ```{r}
 epl_def_main <- epl_defensiveactions %>% 
-  mutate(`TklsW%` = TklsW / Tkls * 10,
+  mutate(`TklsW%` = TklsW / Tkls * 100,
          `TklsW%` = as.numeric(format(round(`TklsW%`, 2)))) %>%
   select(c(1:14, 16, 18:23, 25, 27, 28, 30, 32))
   
@@ -422,26 +573,44 @@ epl_def_full_scaled <- epl_def_full %>% mutate(type = c("max", "min","player")) 
   mutate(value.scaled = (value - min(value)) / (max(value) - min(value))) %>%
   filter(type == "player") %>%
   pivot_wider(names_from = variable, values_from = value.scaled) %>%
+  rename(Tackles = Tkls,
+         `Tackles Won` = TklsW,
+         `% of Tackles Won` = `TklsW%`,
+         `Tackles vs Dribbles` = `Tkls vs Drib`,
+         `% of Dribbles Tackled` = `Tkl% vs Drib`,
+         `Tackles in Attacking 3rd` = `Tkls Att 3rd`,
+         `Tackles in Middle 3rd` = `Tkls Mid 3rd`,
+         `Tackles in Defensive 3rd` = `TKls Def 3rd`,
+         `Pressures` = Press,
+         `Succesful Pressures` = `Succ Press`,
+         `Succesful Pressures %` = `Press%`,
+         `Pressures in Attacking 3rd` = `Press Att 3rd`,
+         `Pressures in Middle 3rd` = `Press Mid 3rd`,
+         `Pressures in Defensive 3rd` = `Press Def 3rd`,
+         `Clearances` = Clr,
+         `Blocked Shots` = `Blocked Sh`,
+         `Blocked Passes` = `Blocked Pass`,
+         Interceptions = Int) %>%
   pivot_longer(c(3:20), names_to = "variable", values_to = "value.scaled") %>%
   filter(!is.na(value.scaled)) %>%
-  arrange(match(variable, c("Tkls",
-                            "TklsW",
-                            "TklsW%",
-                            "Tkls vs Drib",
-                            "Tkl% vs Drib",
-                            "Tkls Att 3rd",
-                            "Tkls Mid 3rd",
-                            "TKls Def 3rd",
-                            "Press",
-                            "Succ Press",
-                            "Press%",
-                            "Press Att 3rd",
-                            "Press Mid 3rd",
-                            "Press Def 3rd",
-                            "Clr",
-                            "Blocked Sh",
-                            "Blocked Pass",
-                            "Int"))) 
+  arrange(match(variable, c("Tackles",
+                            "Tackles Won",
+                            "% of Tackles Won",
+                            "Tackles vs Dribbles",
+                            "% of Dribbles Tackled",
+                            "Tackles in Attacking 3rd",
+                            "Tackles in Middle 3rd",
+                            "Tackles in Defensive 3rd",
+                            "Pressures",
+                            "Succesful Pressures",
+                            "Succesful Pressures %",
+                            "Pressures in Attacking 3rd",
+                            "Pressures in Middle 3rd",
+                            "Pressures in Defensive 3rd",
+                            "Clearances",
+                            "Blocked Shots",
+                            "Blocked Passes",
+                            "Interceptions"))) 
 
  
 
@@ -459,11 +628,13 @@ def_plot <- highchart() %>%
                 color = rgb(0,255,100, maxColorValue = 255),
                 tooltip = list(pointFormat = "{point.variable}: {point.value}"),
                 showInLegend = FALSE,
-                pointWidth = .25) %>%
+                pointWidth = .25,
+                borderColor = "darkgrey",
+                borderWidth = .2) %>%
   hc_xAxis(categories = epl_def_full_scaled$variable) %>%
   hc_yAxis(visible = FALSE,
            max = 1,
-           tickPixelInterval = 0.1) %>%
+           tickPixelInterval = 0.01) %>%
   hc_title(text = epl_def_player$Name,
            align = "center") %>%
   hc_subtitle(text = epl_def_player$Squad,
@@ -472,8 +643,17 @@ def_plot
 ```
 
 ```{r}
+epl_def_table <- epl_def_full_scaled %>% select(variable, value, value.scaled) %>%
+  rename(Stat = variable,
+         Value = value,
+         `Scaled Value` = value.scaled)
+kable(epl_def_table, digits = 3, title = "Defending")
+```
+
+
+```{r}
 epl_def_90_main <- epl_defensiveactions_90 %>% 
-  mutate(`TklsW%` = TklsW / Tkls * 10,
+  mutate(`TklsW%` = TklsW / Tkls * 100,
          `TklsW%` = as.numeric(format(round(`TklsW%`, 2)))) %>%
   select(c(1:14, 16, 18:23, 25, 27, 28, 30, 32))
   
@@ -502,40 +682,70 @@ epl_def_90_full_scaled <- epl_def_90_full %>% mutate(type = c("max", "min","play
   mutate(value.scaled = (value - min(value)) / (max(value) - min(value))) %>%
   filter(type == "player") %>%
   pivot_wider(names_from = variable, values_from = value.scaled) %>%
+  rename(Tackles = Tkls,
+         `Tackles Won` = TklsW,
+         `% of Tackles Won` = `TklsW%`,
+         `Tackles vs Dribbles` = `Tkls vs Drib`,
+         `% of Dribbles Tackled` = `Tkl% vs Drib`,
+         `Tackles in Attacking 3rd` = `Tkls Att 3rd`,
+         `Tackles in Middle 3rd` = `Tkls Mid 3rd`,
+         `Tackles in Defensive 3rd` = `TKls Def 3rd`,
+         `Pressures` = Press,
+         `Succesful Pressures` = `Succ Press`,
+         `Succesful Pressures %` = `Press%`,
+         `Pressures in Attacking 3rd` = `Press Att 3rd`,
+         `Pressures in Middle 3rd` = `Press Mid 3rd`,
+         `Pressures in Defensive 3rd` = `Press Def 3rd`,
+         `Clearances` = Clr,
+         `Blocked Shots` = `Blocked Sh`,
+         `Blocked Passes` = `Blocked Pass`,
+         Interceptions = Int) %>%
   pivot_longer(c(3:20), names_to = "variable", values_to = "value.scaled") %>%
   filter(!is.na(value.scaled)) %>%
-  arrange(match(variable, c("Tkls",
-                            "TklsW",
-                            "TklsW%",
-                            "Tkls vs Drib",
-                            "Tkl% vs Drib",
-                            "Tkls Att 3rd",
-                            "Tkls Mid 3rd",
-                            "TKls Def 3rd",
-                            "Press",
-                            "Succ Press",
-                            "Press%",
-                            "Press Att 3rd",
-                            "Press Mid 3rd",
-                            "Press Def 3rd",
-                            "Clr",
-                            "Blocked Sh",
-                            "Blocked Pass",
-                            "Int")))
+  arrange(match(variable, c("Tackles",
+                            "Tackles Won",
+                            "% of Tackles Won",
+                            "Tackles vs Dribbles",
+                            "% of Dribbles Tackled",
+                            "Tackles in Attacking 3rd",
+                            "Tackles in Middle 3rd",
+                            "Tackles in Defensive 3rd",
+                            "Pressures",
+                            "Succesful Pressures",
+                            "Succesful Pressures %",
+                            "Pressures in Attacking 3rd",
+                            "Pressures in Middle 3rd",
+                            "Pressures in Defensive 3rd",
+                            "Clearances",
+                            "Blocked Shots",
+                            "Blocked Passes",
+                            "Interceptions"))) 
+
  
   
 
 def_90_plot <- highchart() %>%
   hc_chart(polar = TRUE, backgroundColor = "lightgrey") %>%
+    hc_add_series(data = epl_def_90_full_scaled,
+                mapping = hcaes(x = variable, y = 1),
+                type = "point",
+                tooltip = list(pointFormat = "{point.variable}"),
+                color = "lightgrey",
+                animation = FALSE,
+                showInLegend = FALSE) %>%  
   hc_add_series(data = epl_def_90_full_scaled, 
                 mapping = hcaes(x = variable, y = value.scaled), 
                 type = "column",
                 color = rgb(0,255,100, maxColorValue = 255),
                 tooltip = list(pointFormat = "{point.variable}: {point.value}"),
-                showInLegend = FALSE) %>%
+                showInLegend = FALSE,
+                pointWidth = 0.25,
+                borderColor = "darkgrey",
+                borderWidth = .2) %>%
   hc_xAxis(categories = epl_def_full_scaled$variable) %>%
   hc_yAxis(visible = FALSE,
-           max = 1) %>%
+           max = 1,
+           tickPixelInterval = 0.01) %>%
   hc_title(text = epl_def_90_player$Name,
            align = "center") %>%
   hc_subtitle(text = epl_def_90_player$Squad,
@@ -543,6 +753,14 @@ def_90_plot <- highchart() %>%
 def_90_plot
 ```
 
+```{r}
+epl_def_90_table <- epl_def_full_scaled %>% select(variable, value, value.scaled) %>%
+  rename(Stat = variable,
+         Value = value,
+         `Scaled Value` = value.scaled)
+kable(epl_def_90_table, digits = 3, title = "Defending per 90 Minutes")
+```
+ 
  
 ```{r}
 epl_possesion <- read_csv("data/epl_possesion.csv", skip = 1) %>%
@@ -571,6 +789,232 @@ epl_miscellaneous_90 <- read_csv("data/epl_miscellaneous_90.csv", skip = 1) %>%
   select(-c(irrel))
 epl_miscellaneous_90
 ```
+
+```{r}
+poss_extra <- epl_miscellaneous %>% select(c(Recov, `AD Won`, `AD Won%`))
+poss_extra2 <- epl_passing %>% select(c(9:13))
+epl_poss_comb <- bind_cols(epl_possesion, poss_extra, poss_extra2)
+
+epl_poss_main <- epl_poss_comb %>% 
+  select(c(1:14, 27, 29:40))
+
+epl_poss_main_max <- epl_poss_main %>% 
+  drop_na() %>%
+  filter(`90s` >= 4,
+         Pos != "GK") %>% 
+  summarise_if(is.numeric, max)
+epl_poss_main_min <- epl_poss_main %>% 
+  drop_na() %>%
+  filter(`90s` >= 4,
+         Pos != "GK") %>%
+  summarise_if(is.numeric, min)
+
+epl_poss_player <- epl_poss_main %>% filter(Name == "Joao Cancelo")
+
+epl_poss_main_max_min <- bind_rows(epl_poss_main_max, epl_poss_main_min)
+
+epl_poss_full <-bind_rows(epl_poss_main_max_min, epl_poss_player) %>%
+  select(-c(Age, Squad, Pos, Nation, Name, Rk, Born))
+
+epl_poss_full_scaled <- epl_poss_full %>% mutate(type = c("max", "min","player")) %>%
+  pivot_longer(c(1:ncol(epl_poss_full)), names_to = "variable", values_to = "value") %>%
+  group_by(variable) %>%
+  mutate(value.scaled = (value - min(value)) / (max(value) - min(value))) %>%
+  filter(type == "player") %>%
+  pivot_wider(names_from = variable, values_from = value.scaled) %>%
+  mutate(Miscontrol = 1 - Miscontrol) %>%
+  rename(`Touches in Attacking Penalty Area` = `Touches Att Pen`,
+         `Touches in Attacking 3rd` = `Touches Att 3rd`,
+         `Touches in Middle 3rd` = `Touches Mid 3rd`,
+         `Touches in Defensive 3rd` = `Touches Def 3rd`,
+         `Touches in Defensive Penalty Area` = `Touches Def Pen`,
+         Receptions = Rec,
+         Targets = Targ,
+         `Reception %` = `Rec%`,
+         `Progressive Receptions` = `Prog Rec`,
+         `% of Aerial Duels Won` = `AD Won%`,
+         `Aerial Duels Won` = `AD Won`,
+         `Recoveries` = Recov,
+         `Progressive Distance` = PrgDist,
+         `Total Distance` = TotDist,
+         `Completion %` = `Cmp% Total`,
+         `Attempts` = `Att Total`,
+         `Completions` = `Cmp Total`)%>%
+  pivot_longer(c(1:ncol(epl_poss_full) + 2), names_to = "variable", values_to = "value.scaled") %>%
+  filter(!is.na(value.scaled)) %>%
+  arrange(match(variable, c("Touches",
+                            "Touches in Attacking Penalty Area",
+                            "Touches in Attacking 3rd",
+                            "Touches in Middle 3rd",
+                            "Touches in Defensive 3rd",
+                            "Touches in Defensive Penalty Area",
+                            "Receptions",
+                            "Targets",
+                            "Reception %",
+                            "Progressive Receptions",
+                            "% of Aerial Duels Won",
+                            "Aerial Duels Won",
+                            "Recoveries",
+                            "Miscontrol",
+                            "Progressive Distance",
+                            "Total Distance",
+                            "Completion %",
+                            "Attempts",
+                            "Completions"
+                            )))
+  
+  
+
+poss_plot <- highchart() %>%
+  hc_chart(polar = TRUE, backgroundColor = "lightgrey") %>%
+  hc_add_series(data = epl_poss_full_scaled,
+                mapping = hcaes(x = variable, y = 1),
+                type = "point",
+                tooltip = list(pointFormat = "{point.variable}"),
+                color = "lightgrey",
+                animation = FALSE,
+                showInLegend = FALSE) %>%  
+  hc_add_series(data = epl_poss_full_scaled, 
+                mapping = hcaes(x = variable, y = value.scaled), 
+                type = "column",
+                color = rgb(0,255,100, maxColorValue = 255),
+                tooltip = list(pointFormat = "{point.variable}: {point.value}"),
+                showInLegend = FALSE,
+                pointWidth = 0.25,
+                borderColor = "darkgrey",
+                borderWidth = .2) %>%
+  hc_xAxis(categories = epl_poss_full_scaled$variable) %>%
+  hc_yAxis(visible = FALSE,
+           max = 1,
+           tickPixelInterval = 0.01) %>%
+  hc_title(text = epl_poss_player$Name,
+           align = "center") %>%
+  hc_subtitle(text = epl_poss_player$Squad,
+              align = "center")
+poss_plot
+```
+
+```{r}
+epl_poss_table <- epl_poss_full_scaled %>% select(variable, value, value.scaled) %>%
+  rename(Stat = variable,
+         Value = value,
+         `Scaled Value` = value.scaled)
+kable(epl_poss_table, digits = 3, title = "Possesion")
+```
+
+
+```{r}
+poss_90_extra <- epl_miscellaneous_90 %>% select(c(Recov, `AD Won`, `AD Won%`))
+poss_90_extra2 <- epl_passing_90 %>% select(c(9:13))
+epl_poss_90_comb <- bind_cols(epl_possesion_90, poss_90_extra, poss_90_extra2)
+
+epl_poss_90_main <- epl_poss_90_comb %>% 
+  select(c(1:14, 27, 29:40))
+
+epl_poss_90_main_max <- epl_poss_90_main %>% 
+  drop_na() %>%
+  filter(`90s` >= 4,
+         Pos != "GK") %>% 
+  summarise_if(is.numeric, max)
+epl_poss_90_main_min <- epl_poss_90_main %>% 
+  drop_na() %>%
+  filter(`90s` >= 4,
+         Pos != "GK") %>%
+  summarise_if(is.numeric, min)
+
+epl_poss_90_player <- epl_poss_90_main %>% filter(Name == "Trent Alexander-Arnold")
+
+epl_poss_90_main_max_min <- bind_rows(epl_poss_90_main_max, epl_poss_90_main_min)
+
+epl_poss_90_full <-bind_rows(epl_poss_90_main_max_min, epl_poss_90_player) %>%
+  select(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`))
+
+epl_poss_90_full_scaled <- epl_poss_90_full %>% mutate(type = c("max", "min","player")) %>%
+  pivot_longer(c(1:ncol(epl_poss_90_full)), names_to = "variable", values_to = "value") %>%
+  group_by(variable) %>%
+  mutate(value.scaled = (value - min(value)) / (max(value) - min(value))) %>%
+  filter(type == "player") %>%
+  pivot_wider(names_from = variable, values_from = value.scaled) %>%
+  mutate(Miscontrol = 1 - Miscontrol) %>%
+  rename(`Touches in Attacking Penalty Area` = `Touches Att Pen`,
+         `Touches in Attacking 3rd` = `Touches Att 3rd`,
+         `Touches in Middle 3rd` = `Touches Mid 3rd`,
+         `Touches in Defensive 3rd` = `Touches Def 3rd`,
+         `Touches in Defensive Penalty Area` = `Touches Def Pen`,
+         Receptions = Rec,
+         Targets = Targ,
+         `Reception %` = `Rec%`,
+         `Progressive Receptions` = `Prog Rec`,
+         `% of Aerial Duels Won` = `AD Won%`,
+         `Aerial Duels Won` = `AD Won`,
+         `Recoveries` = Recov,
+         `Progressive Distance` = PrgDist,
+         `Total Distance` = TotDist,
+         `Completion %` = `Cmp% Total`,
+         `Attempts` = `Att Total`,
+         `Completions` = `Cmp Total`)%>%
+  pivot_longer(c(1:ncol(epl_poss_90_full) + 2), names_to = "variable", values_to = "value.scaled") %>%
+  filter(!is.na(value.scaled)) %>%
+  arrange(match(variable, c("Touches",
+                            "Touches in Attacking Penalty Area",
+                            "Touches in Attacking 3rd",
+                            "Touches in Middle 3rd",
+                            "Touches in Defensive 3rd",
+                            "Touches in Defensive Penalty Area",
+                            "Receptions",
+                            "Targets",
+                            "Reception %",
+                            "Progressive Receptions",
+                            "% of Aerial Duels Won",
+                            "Aerial Duels Won",
+                            "Recoveries",
+                            "Miscontrol",
+                            "Progressive Distance",
+                            "Total Distance",
+                            "Completion %",
+                            "Attempts",
+                            "Completions"
+                            )))
+  
+  
+
+poss_90_plot <- highchart() %>%
+  hc_chart(polar = TRUE, backgroundColor = "lightgrey") %>%
+  hc_add_series(data = epl_poss_90_full_scaled,
+                mapping = hcaes(x = variable, y = 1),
+                type = "point",
+                tooltip = list(pointFormat = "{point.variable}"),
+                color = "lightgrey",
+                animation = FALSE,
+                showInLegend = FALSE) %>%  
+  hc_add_series(data = epl_poss_90_full_scaled, 
+                mapping = hcaes(x = variable, y = value.scaled), 
+                type = "column",
+                color = rgb(0,255,100, maxColorValue = 255),
+                tooltip = list(pointFormat = "{point.variable}: {point.value}"),
+                showInLegend = FALSE,
+                pointWidth = 0.25,
+                borderColor = "darkgrey",
+                borderWidth = .2) %>%
+  hc_xAxis(categories = epl_poss_90_full_scaled$variable) %>%
+  hc_yAxis(visible = FALSE,
+           max = 1,
+           tickPixelInterval = 0.01) %>%
+  hc_title(text = epl_poss_90_player$Name,
+           align = "center") %>%
+  hc_subtitle(text = epl_poss_90_player$Squad,
+              align = "center")
+poss_90_plot
+```
+
+```{r}
+epl_poss_90_table <- epl_poss_90_full_scaled %>% select(variable, value, value.scaled) %>%
+  rename(Stat = variable,
+         Value = value,
+         `Scaled Value` = value.scaled)
+kable(epl_poss_90_table, digits = 3, title = "Possesion per 90 Minutes")
+```
+
 
 ```{r}
 drib_extra <- epl_miscellaneous %>% select(c(Fld))
@@ -607,26 +1051,153 @@ epl_drib_full_scaled <- epl_drib_full %>% mutate(type = c("max", "min","player")
   mutate(Miscontrol = 1 - Miscontrol,
          Dispossessed = 1- Dispossessed) %>%
   pivot_longer(c(1:ncol(epl_drib_full) + 2), names_to = "variable", values_to = "value.scaled") %>%
-  filter(!is.na(value.scaled)) 
- 
+  filter(!is.na(value.scaled)) %>%
+  arrange(match(variable, c("Succ Drib",
+                            "Att Drib",
+                            "Succ% Drib",
+                            "Drib Past",
+                            "SCA_Drib",
+                            "Fld",
+                            "Megs",
+                            "Dispossessed",
+                            "Miscontrol",
+                            "Carries into PA",
+                            "Carries into Att 3rd",
+                            "TotDist Carried",
+                            "PrgDist Carried",
+                            "Prog Carries",
+                            "Carries"
+                            )))
   
 
 drib_plot <- highchart() %>%
   hc_chart(polar = TRUE, backgroundColor = "lightgrey") %>%
+  hc_add_series(data = epl_drib_full_scaled,
+                mapping = hcaes(x = variable, y = 1),
+                type = "point",
+                tooltip = list(pointFormat = "{point.variable}"),
+                color = "lightgrey",
+                animation = FALSE,
+                showInLegend = FALSE) %>%  
   hc_add_series(data = epl_drib_full_scaled, 
                 mapping = hcaes(x = variable, y = value.scaled), 
                 type = "column",
                 color = rgb(0,255,100, maxColorValue = 255),
                 tooltip = list(pointFormat = "{point.variable}: {point.value}"),
-                showInLegend = FALSE) %>%
+                showInLegend = FALSE,
+                pointWidth = 0.25,
+                borderColor = "darkgrey",
+                borderWidth = .2) %>%
   hc_xAxis(categories = epl_drib_full_scaled$variable) %>%
   hc_yAxis(visible = FALSE,
-           max = 1) %>%
+           max = 1,
+           tickPixelInterval = 0.01) %>%
   hc_title(text = epl_drib_player$Name,
            align = "center") %>%
   hc_subtitle(text = epl_drib_player$Squad,
               align = "center")
 drib_plot
+```
+
+```{r}
+epl_drib_table <- epl_drib_full_scaled %>% select(variable, value, value.scaled) %>%
+  rename(Stat = variable,
+         Value = value,
+         `Scaled Value` = value.scaled)
+kable(epl_drib_table, digits = 3, title = "Dribbling")
+```
+
+
+```{r}
+drib_90_extra <- epl_miscellaneous_90 %>% select(c(Fld))
+drib_90_extra2 <- epl_goalandshotcreation_90 %>% select(c(SCA_Drib))
+epl_drib_90_comb <- bind_cols(epl_possesion_90, drib_90_extra, drib_90_extra2)
+
+epl_drib_90_main <- epl_drib_90_comb %>% 
+  select(c(1:8, 16:28, 33:34))
+
+epl_drib_90_main_max <- epl_drib_90_main %>% 
+  drop_na() %>%
+  filter(`90s` >= 4,
+         Pos != "GK") %>% 
+  summarise_if(is.numeric, max)
+epl_drib_90_main_min <- epl_drib_90_main %>% 
+  drop_na() %>%
+  filter(`90s` >= 4,
+         Pos != "GK") %>%
+  summarise_if(is.numeric, min)
+
+epl_drib_90_player <- epl_drib_90_main %>% filter(Name == "Joao Cancelo")
+
+epl_drib_90_main_max_min <- bind_rows(epl_drib_90_main_max, epl_drib_90_main_min)
+
+epl_drib_90_full <-bind_rows(epl_drib_90_main_max_min, epl_drib_90_player) %>%
+  select(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`))
+
+epl_drib_90_full_scaled <- epl_drib_90_full %>% mutate(type = c("max", "min","player")) %>%
+  pivot_longer(c(1:ncol(epl_drib_90_full)), names_to = "variable", values_to = "value") %>%
+  group_by(variable) %>%
+  mutate(value.scaled = (value - min(value)) / (max(value) - min(value))) %>%
+  filter(type == "player") %>%
+  pivot_wider(names_from = variable, values_from = value.scaled) %>%
+  mutate(Miscontrol = 1 - Miscontrol,
+         Dispossessed = 1- Dispossessed) %>%
+  pivot_longer(c(1:ncol(epl_drib_full) + 2), names_to = "variable", values_to = "value.scaled") %>%
+  filter(!is.na(value.scaled)) %>%
+  arrange(match(variable, c("Succ Drib",
+                            "Att Drib",
+                            "Succ% Drib",
+                            "Drib Past",
+                            "SCA_Drib",
+                            "Fld",
+                            "Megs",
+                            "Dispossessed",
+                            "Miscontrol",
+                            "Carries into PA",
+                            "Carries into Att 3rd",
+                            "TotDist Carried",
+                            "PrgDist Carried",
+                            "Prog Carries",
+                            "Carries"
+                            )))
+  
+  
+
+drib_90_plot <- highchart() %>%
+  hc_chart(polar = TRUE, backgroundColor = "lightgrey") %>%
+  hc_add_series(data = epl_drib_90_full_scaled,
+                mapping = hcaes(x = variable, y = 1),
+                type = "point",
+                tooltip = list(pointFormat = "{point.variable}"),
+                color = "lightgrey",
+                animation = FALSE,
+                showInLegend = FALSE) %>%  
+  hc_add_series(data = epl_drib_90_full_scaled, 
+                mapping = hcaes(x = variable, y = value.scaled), 
+                type = "column",
+                color = rgb(0,255,100, maxColorValue = 255),
+                tooltip = list(pointFormat = "{point.variable}: {point.value}"),
+                showInLegend = FALSE,
+                pointWidth = 0.25,
+                borderColor = "darkgrey",
+                borderWidth = .2) %>%
+  hc_xAxis(categories = epl_drib_90_full_scaled$variable) %>%
+  hc_yAxis(visible = FALSE,
+           max = 1,
+           tickPixelInterval = 0.01) %>%
+  hc_title(text = epl_drib_90_player$Name,
+           align = "center") %>%
+  hc_subtitle(text = epl_drib_90_player$Squad,
+              align = "center")
+drib_90_plot
+```
+
+```{r}
+epl_drib_90_table <- epl_drib_90_full_scaled %>% select(variable, value, value.scaled) %>%
+  rename(Stat = variable,
+         Value = value,
+         `Scaled Value` = value.scaled)
+kable(epl_drib_90_table, digits = 3, title = "Dribbling per 90 Minutes")
 ```
 
 
@@ -658,11 +1229,339 @@ epl_goalkeeperadvanced_90 <- read_csv("data/epl_goalkeeperadvanced_90.csv", skip
 epl_goalkeeperadvanced_90
 ```
 
+```{r}
+epl_gk_comb <- left_join(epl_goalkeeper, epl_goalkeeperadvanced) %>% 
+  rename(`Save%` = `Save%...17`,
+         `PK Save%` = `Save%...27`)
+epl_gk_90_comb <- left_join(epl_goalkeeper_90, epl_goalkeeperadvanced_90)  %>% 
+  rename(`Save%` = `Save%...16`,
+         `PK Save%` = `Save%...26`)
+```
+
+```{r}
+epl_gk_dist_main <- epl_gk_comb %>% 
+  select(c(1:11, 34:43, 47, 49))
+
+epl_gk_dist_main_max <- epl_gk_dist_main %>% 
+  drop_na() %>%
+  filter(`90s` >= 4) %>% 
+  summarise_if(is.numeric, max)
+epl_gk_dist_main_min <- epl_gk_dist_main %>% 
+  drop_na() %>%
+  filter(`90s` >= 4) %>%
+  summarise_if(is.numeric, min)
+
+epl_gk_dist_player <- epl_gk_dist_main %>% filter(Name == "Nick Pope")
+
+epl_gk_dist_main_max_min <- bind_rows(epl_gk_dist_main_max, epl_gk_dist_main_min)
+
+epl_gk_dist_full <-bind_rows(epl_gk_dist_main_max_min, epl_gk_dist_player) %>%
+  select(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`, Starts, Min, MP))
+
+epl_gk_dist_full_scaled <- epl_gk_dist_full %>% mutate(type = c("max", "min","player")) %>%
+  pivot_longer(c(1:ncol(epl_gk_dist_full)), names_to = "variable", values_to = "value") %>%
+  group_by(variable) %>%
+  mutate(value.scaled = (value - min(value)) / (max(value) - min(value))) %>%
+  filter(type == "player") %>%
+  pivot_wider(names_from = variable, values_from = value.scaled) %>%
+  pivot_longer(c(1:ncol(epl_gk_dist_full) + 2), names_to = "variable", values_to = "value.scaled") %>%
+  filter(!is.na(value.scaled)) %>%
+  arrange(match(variable, c("Pass Att",
+                            "Pass AvgLen",
+                            "Launched Cmp",
+                            "Launched Att",
+                            "Launched Cmp%",
+                            "Launch%",
+                            "GK Launch%",
+                            "Gk AvgLen",
+                            "GK Att",
+                            "AvgDist",
+                            "#OPA/90",
+                            "#OPA",
+                            "Throws")))
+
+gk_dist_plot <- highchart() %>%
+  hc_chart(polar = TRUE, backgroundColor = "lightgrey") %>%
+  hc_add_series(data = epl_gk_dist_full_scaled,
+                mapping = hcaes(x = variable, y = 1),
+                type = "point",
+                tooltip = list(pointFormat = "{point.variable}"),
+                color = "lightgrey",
+                animation = FALSE,
+                showInLegend = FALSE) %>%  
+  hc_add_series(data = epl_gk_dist_full_scaled, 
+                mapping = hcaes(x = variable, y = value.scaled), 
+                type = "column",
+                color = rgb(0,255,100, maxColorValue = 255),
+                tooltip = list(pointFormat = "{point.variable}: {point.value}"),
+                showInLegend = FALSE,
+                pointWidth = 0.25,
+                borderColor = "darkgrey",
+                borderWidth = .2) %>%
+  hc_xAxis(categories = epl_gk_dist_full_scaled$variable) %>%
+  hc_yAxis(visible = FALSE,
+           max = 1,
+           tickPixelInterval = 0.01) %>%
+  hc_title(text = epl_gk_dist_player$Name,
+           align = "center") %>%
+  hc_subtitle(text = epl_gk_dist_player$Squad,
+              align = "center")
+gk_dist_plot
+```
+
+```{r}
+epl_gk_dist_table <- epl_gk_dist_full_scaled %>% select(variable, value, value.scaled) %>%
+  rename(Stat = variable,
+         Value = value,
+         `Scaled Value` = value.scaled)
+kable(epl_gk_dist_table, digits = 3, title = "Goalkeeping Distribution")
+```
 
 
+```{r}
+epl_gk_dist_90_main <- epl_gk_90_comb %>% 
+  select(c(1:11, 34:43, 47))
+
+epl_gk_dist_90_main_max <- epl_gk_dist_90_main %>% 
+  drop_na() %>%
+  filter(`90s` >= 4) %>% 
+  summarise_if(is.numeric, max)
+epl_gk_dist_90_main_min <- epl_gk_dist_90_main %>% 
+  drop_na() %>%
+  filter(`90s` >= 4) %>%
+  summarise_if(is.numeric, min)
+
+epl_gk_dist_90_player <- epl_gk_dist_90_main %>% filter(Name == "Nick Pope")
+
+epl_gk_dist_90_main_max_min <- bind_rows(epl_gk_dist_90_main_max, epl_gk_dist_90_main_min)
+
+epl_gk_dist_90_full <-bind_rows(epl_gk_dist_90_main_max_min, epl_gk_dist_90_player) %>%
+  select(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`, Starts, Min, MP))
+
+epl_gk_dist_90_full_scaled <- epl_gk_dist_90_full %>% mutate(type = c("max", "min","player")) %>%
+  pivot_longer(c(1:ncol(epl_gk_dist_90_full)), names_to = "variable", values_to = "value") %>%
+  group_by(variable) %>%
+  mutate(value.scaled = (value - min(value)) / (max(value) - min(value))) %>%
+  filter(type == "player") %>%
+  pivot_wider(names_from = variable, values_from = value.scaled) %>%
+  pivot_longer(c(1:ncol(epl_gk_dist_90_full) + 2), names_to = "variable", values_to = "value.scaled") %>%
+  filter(!is.na(value.scaled)) %>%
+  arrange(match(variable, c("Pass Att",
+                            "Pass AvgLen",
+                            "Launched Cmp",
+                            "Launched Att",
+                            "Launched Cmp%",
+                            "Launch%",
+                            "GK Launch%",
+                            "Gk AvgLen",
+                            "GK Att",
+                            "#OPA",
+                            "Throws")))
+
+gk_dist_90_plot <- highchart() %>%
+  hc_chart(polar = TRUE, backgroundColor = "lightgrey") %>%
+  hc_add_series(data = epl_gk_dist_90_full_scaled,
+                mapping = hcaes(x = variable, y = 1),
+                type = "point",
+                tooltip = list(pointFormat = "{point.variable}"),
+                color = "lightgrey",
+                animation = FALSE,
+                showInLegend = FALSE) %>%  
+  hc_add_series(data = epl_gk_dist_90_full_scaled, 
+                mapping = hcaes(x = variable, y = value.scaled), 
+                type = "column",
+                color = rgb(0,255,100, maxColorValue = 255),
+                tooltip = list(pointFormat = "{point.variable}: {point.value}"),
+                showInLegend = FALSE,
+                pointWidth = 0.25,
+                borderColor = "darkgrey",
+                borderWidth = .2) %>%
+  hc_xAxis(categories = epl_gk_dist_90_full_scaled$variable) %>%
+  hc_yAxis(visible = FALSE,
+           max = 1,
+           tickPixelInterval = 0.01) %>%
+  hc_title(text = epl_gk_dist_90_player$Name,
+           align = "center") %>%
+  hc_subtitle(text = epl_gk_dist_90_player$Squad,
+              align = "center")
+gk_dist_90_plot
+```
+
+```{r}
+epl_gk_dist_90_table <- epl_gk_dist_90_full_scaled %>% select(variable, value, value.scaled) %>%
+  rename(Stat = variable,
+         Value = value,
+         `Scaled Value` = value.scaled)
+kable(epl_gk_dist_90_table, digits = 3, title = "Goalkeeping Distribution per 90 Minutes")
+```
+
+```{r}
+epl_gk_base_main <- epl_gk_comb %>% 
+  select(c(1:12, 14:16, 20, 21, 30:32, 44:46, 47, 49))
+
+epl_gk_base_main_max <- epl_gk_base_main %>% 
+  drop_na() %>%
+  filter(`90s` >= 4) %>% 
+  summarise_if(is.numeric, max)
+epl_gk_base_main_min <- epl_gk_base_main %>% 
+  drop_na() %>%
+  filter(`90s` >= 4) %>%
+  summarise_if(is.numeric, min)
+
+epl_gk_base_player <- epl_gk_base_main %>% filter(Name == "Ederson")
+
+epl_gk_base_main_max_min <- bind_rows(epl_gk_base_main_max, epl_gk_base_main_min)
+
+epl_gk_base_full <-bind_rows(epl_gk_base_main_max_min, epl_gk_base_player) %>%
+  select(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`, Starts, Min))
+
+epl_gk_base_full_scaled <- epl_gk_base_full %>% mutate(type = c("max", "min","player")) %>%
+  pivot_longer(c(1:ncol(epl_gk_base_full)), names_to = "variable", values_to = "value") %>%
+  group_by(variable) %>%
+  mutate(value.scaled = (value - min(value)) / (max(value) - min(value))) %>%
+  filter(type == "player") %>%
+  pivot_wider(names_from = variable, values_from = value.scaled) %>%
+  mutate(GA = 1 - GA) %>%
+  pivot_longer(c(1:ncol(epl_gk_base_full) + 2), names_to = "variable", values_to = "value.scaled") %>%
+  filter(!is.na(value.scaled)) %>%
+  arrange(match(variable, c("GA",
+                            "SoTA",
+                            "Saves", 
+                            "Save%",
+                            "PSxG",
+                            "PSxG/SoT",
+                            "PSxG+/-",
+                            "Opp Cross",
+                            "Stp Cross",
+                            "Stp% Cross",
+                            "#OPA",
+                            "#OPA/90",
+                            "AvgDist",
+                            "CS%",
+                            "CS",
+                            "MP")))
+  
+
+gk_base_plot <- highchart() %>%
+  hc_chart(polar = TRUE, backgroundColor = "lightgrey") %>%
+  hc_add_series(data = epl_gk_base_full_scaled,
+                mapping = hcaes(x = variable, y = 1),
+                type = "point",
+                tooltip = list(pointFormat = "{point.variable}"),
+                color = "lightgrey",
+                animation = FALSE,
+                showInLegend = FALSE) %>%  
+  hc_add_series(data = epl_gk_base_full_scaled, 
+                mapping = hcaes(x = variable, y = value.scaled), 
+                type = "column",
+                color = rgb(0,255,100, maxColorValue = 255),
+                tooltip = list(pointFormat = "{point.variable}: {point.value}"),
+                showInLegend = FALSE,
+                pointWidth = 0.25,
+                borderColor = "darkgrey",
+                borderWidth = .2) %>%
+  hc_xAxis(categories = epl_gk_base_full_scaled$variable) %>%
+  hc_yAxis(visible = FALSE,
+           max = 1,
+           tickPixelInterval = 0.01) %>%
+  hc_title(text = epl_gk_base_player$Name,
+           align = "center") %>%
+  hc_subtitle(text = epl_gk_base_player$Squad,
+              align = "center")
+gk_base_plot
+```
+
+```{r}
+epl_gk_base_table <- epl_gk_base_full_scaled %>% select(variable, value, value.scaled) %>%
+  rename(Stat = variable,
+         Value = value,
+         `Scaled Value` = value.scaled)
+kable(epl_gk_base_table, digits = 3, title = "Goalkeeping")
+```
 
 
+```{r}
+epl_gk_90_base_main <- epl_gk_90_comb %>% 
+  select(c(1:12, 14:16, 20, 21, 30:32, 44:46, 47))
 
+epl_gk_90_base_main_max <- epl_gk_90_base_main %>% 
+  drop_na() %>%
+  filter(`90s` >= 4) %>% 
+  summarise_if(is.numeric, max)
+epl_gk_90_base_main_min <- epl_gk_90_base_main %>% 
+  drop_na() %>%
+  filter(`90s` >= 4) %>%
+  summarise_if(is.numeric, min)
+
+epl_gk_90_base_player <- epl_gk_90_base_main %>% filter(Name == "Nick Pope")
+
+epl_gk_90_base_main_max_min <- bind_rows(epl_gk_90_base_main_max, epl_gk_90_base_main_min)
+
+epl_gk_90_base_full <-bind_rows(epl_gk_90_base_main_max_min, epl_gk_90_base_player) %>%
+  select(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`, Starts, Min))
+
+epl_gk_90_base_full_scaled <- epl_gk_90_base_full %>% mutate(type = c("max", "min","player")) %>%
+  pivot_longer(c(1:ncol(epl_gk_90_base_full)), names_to = "variable", values_to = "value") %>%
+  group_by(variable) %>%
+  mutate(value.scaled = (value - min(value)) / (max(value) - min(value))) %>%
+  filter(type == "player") %>%
+  pivot_wider(names_from = variable, values_from = value.scaled) %>%
+  mutate(GA = 1 - GA) %>%
+  pivot_longer(c(1:ncol(epl_gk_90_base_full) + 2), names_to = "variable", values_to = "value.scaled") %>%
+  filter(!is.na(value.scaled)) %>%
+  arrange(match(variable, c("GA",
+                            "SoTA",
+                            "Saves", 
+                            "Save%",
+                            "PSxG",
+                            "PSxG/SoT",
+                            "PSxG+/-",
+                            "Opp Cross",
+                            "Stp Cross",
+                            "Stp% Cross",
+                            "#OPA",
+                            "#OPA/90",
+                            "CS%",
+                            "CS",
+                            "MP")))
+  
+
+gk_90_base_plot <- highchart() %>%
+  hc_chart(polar = TRUE, backgroundColor = "lightgrey") %>%
+  hc_add_series(data = epl_gk_90_base_full_scaled,
+                mapping = hcaes(x = variable, y = 1),
+                type = "point",
+                tooltip = list(pointFormat = "{point.variable}"),
+                color = "lightgrey",
+                animation = FALSE,
+                showInLegend = FALSE) %>%  
+  hc_add_series(data = epl_gk_90_base_full_scaled, 
+                mapping = hcaes(x = variable, y = value.scaled), 
+                type = "column",
+                color = rgb(0,255,100, maxColorValue = 255),
+                tooltip = list(pointFormat = "{point.variable}: {point.value}"),
+                showInLegend = FALSE,
+                pointWidth = 0.25,
+                borderColor = "darkgrey",
+                borderWidth = .2) %>%
+  hc_xAxis(categories = epl_gk_90_base_full_scaled$variable) %>%
+  hc_yAxis(visible = FALSE,
+           max = 1,
+           tickPixelInterval = 0.01) %>%
+  hc_title(text = epl_gk_90_base_player$Name,
+           align = "center") %>%
+  hc_subtitle(text = epl_gk_90_base_player$Squad,
+              align = "center")
+gk_90_base_plot
+```
+
+```{r}
+epl_gk_90_base_table <- epl_gk_90_base_full_scaled %>% select(variable, value, value.scaled) %>%
+  rename(Stat = variable,
+         Value = value,
+         `Scaled Value` = value.scaled)
+kable(epl_gk_90_base_table, digits = 3, title = "Goalkeeping per 90 Minutes")
+```
 
 
 
