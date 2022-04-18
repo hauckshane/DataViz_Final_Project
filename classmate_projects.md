@@ -2,7 +2,7 @@
 
 Charlie: Creating an r package that will help users create graphs and animations based on hockey data. 
 
-## March 23
+## March 23 
 
 Nick: Using real estate data from Boston to create something that will help users when buying a house. 
 
@@ -21,3 +21,7 @@ Grace: Creating an interactive map that shows the different counties in Californ
 ## April 6
 
 Maddox: Creating a leaflet shiny app that shows the different maternity hospitals.
+
+## April 18
+
+Trent: Creating a shiny app that visulaizes data from Major League Soccer.
