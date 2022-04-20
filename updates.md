@@ -46,7 +46,7 @@ Worked on creating passing radar chart.
 
 Figured out how to make interactive radar charts with the highcharter package and then created plots for passing and defensive stats (both total and per 90 minutes). 
 
-## April 13 
+## April 13  
 
 Created charts for shooting and dribbling stats (both total and per 90) and also learned how to add another interactive point to the chart that will later be used to give a written description of each variable.
 
@@ -57,3 +57,7 @@ I added interactive points to each chart to each of the charts and made charts (
 ## April 18 end of class
 
 Began working with shiny to get a user input for player and then created a tab to show the shooting radar chart and table for that player.
+
+## April 20 beginning of class
+
+Added the passing variable descriptions to the passing plot and then added the plot to the shiny app. Fixed some issues the plots were having in the shiny app and created a theme for the plots.
