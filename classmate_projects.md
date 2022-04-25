@@ -1,5 +1,5 @@
 ## March 21
-
+ 
 Charlie: Creating an r package that will help users create graphs and animations based on hockey data. 
 
 ## March 23 
@@ -29,3 +29,7 @@ Trent: Creating a shiny app that visulaizes data from Major League Soccer.
 ## April 20
 
 Casey: Creating a shiny app showcasing swimming data from world cup and olympics.
+
+## April 25
+
+Tom: Working on an R package to help users visualize covid data.

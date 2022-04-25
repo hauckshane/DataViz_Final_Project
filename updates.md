@@ -62,10 +62,14 @@ Began working with shiny to get a user input for player and then created a tab t
 
 Added the passing variable descriptions to the passing plot and then added the plot to the shiny app. Fixed some issues the plots were having in the shiny app and created a theme for the plots.  
 
-## April 20 end of class
+## April 20 end of class 
 
 Added a check button to switch between regular and per 90 min graphs and tables and added the shooting and passing 90 min graphs and tables to the shiny app.
 
 ## April 25 beginning of class
 
 Added a check button that filters how a players graph will be compared to only players that play their position. Also created a way that will graph players on their ranking of each variable instead of the values themselves.
+
+## April 25 end of class
+
+Worked on adding a check button to compare the graphs by rank.

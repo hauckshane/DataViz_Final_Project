@@ -3,11 +3,11 @@ title: "Final Project"
 author: "Shane Hauck"
 date: '2022-03-21'
 output: html_document
----
+--- 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
+``` 
 
 ```{r}
 library(tidyverse)
@@ -1651,19 +1651,42 @@ kable(epl_gk_90_base_table, digits = 3, title = "Goalkeeping per 90 Minutes")
 
 
 
+
+
+
+
+
+
+
   
 
 
-
-
-
-
-
-
-
-
-
-
+shooting_rank_plot <- highchart() %>%
+  hc_chart(polar = TRUE) %>%
+  hc_add_theme(hc_theme_db()) %>%
+  hc_xAxis(categories = epl_shoot_full_scaled$variable) %>%
+  hc_yAxis(tickAmount = 5,
+           max = 1,
+           tickPixelInterval = 0.01,
+           shared = TRUE) %>%
+  hc_title(text = epl_shooting_rank_player$Name,
+           align = "center") %>%
+  hc_subtitle(text = epl_shooting_rank_player$Squad,
+              align = "center") %>%
+  hc_add_series(data = shooting_descr,
+                mapping = hcaes(x = variable, y = 1),
+                type = "scatter",
+                tooltip = list(headerFormat = "", pointFormat = "{point.description}"),
+                animation = FALSE,
+                showInLegend = FALSE) %>%  
+  hc_add_series(data = epl_shooting_rank_final, 
+                mapping = hcaes(x = variable, y = rank.scaled), 
+                type = "column",
+                tooltip = list(headFormat = "{point.variable}", pointFormat = "{point.value}"),
+                showInLegend = FALSE,
+                pointWidth = 0.5,
+                borderColor = "darkgrey",
+                borderWidth = .2) 
 
 
 ```{r}
@@ -1683,6 +1706,7 @@ ui <- fluidPage(
     verbatimTextOutput("text"),
     prettyCheckbox("check90", "per 90 min", FALSE, inline = TRUE),
     prettyCheckbox("checkPOS", "position", FALSE, inline = TRUE),
+    prettyCheckbox("checkRank", "rank", FALSE, inline = TRUE),
     tabsetPanel(
       tabPanel("Shooting", 
                highchartOutput("shootPlot", height = "80vh"),
@@ -1700,7 +1724,7 @@ server <- function(input, output, session) {
     paste("Filters:")
   })
   
-  ##SHOOTING
+##SHOOTING
   epl_shooting_max <- reactive({
     if (input$checkPOS == FALSE) {
       epl_shooting %>%
@@ -1714,12 +1738,7 @@ server <- function(input, output, session) {
         filter(`90s` >= 4,
                Pos != "GK") %>% 
         pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position") 
-      player_pos <- left_join(epl_standard, epl_positions) %>% 
-        filter(Name == input$playerchoice) %>%
-        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position") %>%
-        filter(!is.na(position))
-      semi_join(pos_max, player_pos, by = c("position" = "position")) %>%
-      pivot_wider(names_from = "type", values_from = "position") %>%
+       %>%
       summarise_if(is.numeric, max)
     }
   })
@@ -1803,8 +1822,10 @@ server <- function(input, output, session) {
            style = list(fontSize = 24)
            ) %>%
   hc_add_theme(hc_theme_google()) %>%
-  hc_add_series(data = epl_shoot_full_scaled(), 
-                mapping = hcaes(x = variable, y = value.scaled), 
+  hc_add_series(data = if(input$checkRank == FALSE) {epl_shoot_full_scaled()}
+                        else{epl_shooting_rank_final()}, 
+                mapping = hcaes(x = variable, y = if(input$checkRank == FALSE) {value.scaled}
+                                                    else{rank.scaled}), 
                 type = "column",
                 tooltip = list(headFormat = "{point.variable}", pointFormat = "{point.value}"),
                 showInLegend = FALSE,
@@ -1840,7 +1861,105 @@ server <- function(input, output, session) {
          `Scaled Value` = value.scaled)
   })
   
-  ## Shooting 90
+##SHOOTING RANK
+  epl_shooting_rank <- reactive({
+    if(input$checkPOS == FALSE) {
+      if(input$check90 == FALSE){epl_shooting}
+        else{epl_shootin_90}%>%
+      filter(`90s` >= 4,
+             Pos != "GK") %>%
+      drop_na() %>%
+      mutate(across(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`, FK, PKatt, PK), min_rank, .names = "rank_{.col}")) %>%
+      mutate(`rank_G-xG` = rank(-`G-xG`),
+             `rank_np:G-xG` = rank(-`np:G-xG`))
+    }
+    else {
+      player_pos <- left_join(epl_standard, epl_positions) %>% 
+        filter(Name == input$playerchoice) %>%
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position") %>%
+        filter(!is.na(position))
+      semi_join(if(input$check90 == FALSE){epl_shooting}
+                else{epl_shootin_90}, player_pos, by = c("position" = "position")) %>%
+      pivot_wider(names_from = "type", values_from = "position") %>%
+      filter(`90s` >= 4) %>%
+      drop_na() %>%
+      mutate(across(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`, FK, PKatt, PK), min_rank, .names = "rank_{.col}")) %>%
+      mutate(`rank_G-xG` = rank(-`G-xG`),
+              `rank_np:G-xG` = rank(-`np:G-xG`))
+    }
+  })
+  epl_shooting_rank_max <- reactive({
+    epl_shooting_rank() %>%
+    drop_na() %>%
+    filter(`90s` >= 4,
+           Pos != "GK") %>% 
+    summarise_if(is.numeric, max)
+  })
+  epl_shooting_rank_min <- reactive({
+    epl_shooting_rank() %>%
+    drop_na() %>%
+    filter(`90s` >= 4,
+           Pos != "GK") %>% 
+    summarise_if(is.numeric, min)
+  })
+  epl_shooting_rank_player <- reactive({
+    epl_shooting_rank %>% filter(Name == input$playerChoice)
+  })
+  epl_shooting_rank_max_min <- reactive({
+    bind_rows(epl_shooting_rank_max(), epl_shooting_rank_min())
+  })
+  epl_shooting_rank_full <- reactive({
+    bind_rows(epl_shooting_rank_max_min(), epl_shooting_rank_player()) %>%
+    select(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`, FK, PKatt, PK))
+  })
+  epl_shooting_var_vals <- reactive({ 
+    epl_shooting_rank_player() %>% 
+    select(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`, FK, PKatt, PK)) %>%
+    pivot_longer(everything(), names_to = "variable", values_to = "value") %>%
+    slice(c(1:12))
+  })
+
+  epl_shooting_var_ranks <- reactive({
+    epl_shooting_rank_full() %>% 
+    select(-c(1:12)) %>%
+    mutate(type = c("max", "min","player")) %>%
+    pivot_longer(cols = c(1:12), names_to = "rankVar", values_to = "rankVal") %>%
+    group_by(rankVar) %>%
+    mutate(rank.scaled = (rankVal/ (max(rankVal)))) %>%
+    filter(type == "player")
+  })
+  epl_shooting_rank_final <- reactive({
+    bind_cols(epl_shooting_var_vals(), epl_shooting_var_ranks()) %>%
+    pivot_wider(names_from = variable, values_from = value) %>%
+    rename(Goals = Gls,
+           Shots = Sh,
+           `Shots on Target` = SoT,
+           `Shots on Target%` = `SoT%`,
+           `Goals/Shot` = `G/Sh`,
+           `Goals/Shot on Target` = `G/SoT`,
+           Distance = Dist,
+           `Non Penalty: xGoals/Shot` = `npxG/Sh`,
+           `Non Penalty: Goals - xGoals` = `np:G-xG`,
+           `Goals - xGoals` = `G-xG`,
+           `Non Penalty xGoals` = npxG,
+           `xGoals` = xG) %>%
+    pivot_longer(c(5:16), names_to = "variable", values_to = "value") %>%
+    filter(!is.na(value)) %>%
+    arrange(match(variable, c("Goals",
+                              "Shots",
+                              "Goals/Shot",
+                              "Shots on Target",
+                              "Shots on Target%",
+                              "Goals/Shot on Target",
+                              "Distance",
+                              "Non Penalty: xGoals/Shot",
+                              "Non Penalty: Goals - xGoals",
+                              "Non Penalty xGoals",
+                              "Goals - xGoals",
+                              "xGoals"))) 
+  })
+  
+## Shooting 90
    epl_shooting_90_max <- reactive({
     if (input$checkPOS == FALSE) {
       epl_shooting_90 %>%
@@ -1931,6 +2050,7 @@ server <- function(input, output, session) {
                             "Goals - xGoals",
                             "xGoals"))) 
   })
+  
   shooting_90_plot <- reactive({
   highchart() %>%
   hc_chart(polar = TRUE, 
@@ -1945,8 +2065,10 @@ server <- function(input, output, session) {
                 tooltip = list(headerFormat = "", pointFormat = "{point.description}"),
                 animation = FALSE,
                 showInLegend = FALSE) %>%   
-  hc_add_series(data = epl_shoot_90_full_scaled(), 
-                mapping = hcaes(x = variable, y = value.scaled), 
+  hc_add_series(data = if(input$checkRank == FALSE){epl_shoot_90_full_scaled()}
+                        else{epl_shooting_rank_final}, 
+                mapping = hcaes(x = variable, y = if(input$checkRank == FALSE){value.scaled}
+                                                    else{rank.scaled}), 
                 type = "column",
                 color = "red",
                 tooltip = list(headFormat = "{point.variable}", pointFormat = "{point.value}"),
@@ -1972,16 +2094,16 @@ server <- function(input, output, session) {
   })
     
   output$shootPlot <- renderHighchart({
-    if (input$check90 == FALSE) {
-     shooting_plot()
+    if (input$check90 == TRUE) {
+     shooting_90_plot()
     } 
-    else {shooting_90_plot()}
+    else {shooting_plot()}
   })
   output$shootTable <- renderTable({
-    if (input$check90 == FALSE) {
-      epl_shoot_table()
+    if (input$check90 == TRUE) {
+      epl_shoot_90_table()
     }
-    else {epl_shoot_90_table()}
+    else {epl_shoot_table()}
   })
   
   
