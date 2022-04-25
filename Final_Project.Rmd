@@ -23,7 +23,8 @@ library(knitr)
 epl_player_22 <- read_csv("data/epl_player_22.csv") %>% separate(player_positions, into = c("Pos1", "Pos2", "Pos3"), remove = FALSE)
 epl_players <- epl_player_22 %>% select(c(4, 6:9, 12:17, 19, 23, 26, 28, 32, 110, 111, 114))
 
-left_join(epl_standard, epl_players)
+epl_comb <- left_join(epl_standard, epl_players)
+epl_positions <- epl_comb %>% select(Name, Pos1, Pos2, Pos3)
 ```
 
 
@@ -34,13 +35,11 @@ epl_standard <- read_csv("data/epl_standard.csv") %>%
   select(-c(irrel)) %>%
   select(-c(`Gls/90`, `Ast/90`, `G+A/90`, `G-PK/90`, `G+A-PK/90`, `xG/90`, `xA/90`, `xG+xA/90`, `npxG/90`, `npxG+xA/90`)) %>% 
   mutate(`G+A` = Gls + Ast)
-epl_standard
 
 epl_standard_90 <- read_csv("data/epl_standard_90.csv") %>% 
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel)) 
-epl_standard_90
 ```
 
 ```{r}
@@ -55,14 +54,12 @@ epl_shooting <- read_csv("data/epl_shooting.csv", skip = 1) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel)) %>%
   select(-c(`Sh/90`, `SoT/90`))
-epl_shooting
 
 epl_shooting_90 <- read_csv("data/epl_shooting_90.csv", skip = 1) %>% 
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel)) %>%
   select(-c(`Sh/90`, `SoT/90`))
-epl_shooting_90
 
 shooting_descr <- read_csv("data/shooting_descr.csv")
 ```
@@ -148,8 +145,104 @@ shooting_plot <- highchart() %>%
                 pointWidth = 0.5,
                 borderColor = "darkgrey",
                 borderWidth = .2) 
+```
 
-shooting_plot
+```{r}
+epl_shooting_rank <- epl_shooting %>%
+  filter(`90s` >= 4,
+         Pos != "GK") %>%
+  drop_na() %>%
+  mutate(across(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`, FK, PKatt, PK), min_rank, .names = "rank_{.col}")) %>%
+  mutate(`rank_G-xG` = rank(-`G-xG`),
+         `rank_np:G-xG` = rank(-`np:G-xG`))
+
+epl_shooting_rank_max <- epl_shooting_rank %>%
+  drop_na() %>%
+  filter(`90s` >= 4,
+         Pos != "GK") %>% 
+  summarise_if(is.numeric, max)
+
+epl_shooting_rank_min <- epl_shooting_rank %>%
+  drop_na() %>%
+  filter(`90s` >= 4,
+         Pos != "GK") %>% 
+  summarise_if(is.numeric, min)
+
+epl_shooting_rank_player <- epl_shooting_rank %>% filter(Name == "Cristiano Ronaldo")
+
+epl_shooting_rank_max_min <- bind_rows(epl_shooting_rank_max, epl_shooting_rank_min)
+
+epl_shooting_rank_full <- bind_rows(epl_shooting_rank_max_min, epl_shooting_rank_player) %>%
+  select(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`, FK, PKatt, PK))
+
+epl_shooting_var_vals <- epl_shooting_rank_player %>% 
+  select(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`, FK, PKatt, PK)) %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "value") %>%
+  slice(c(1:12))
+
+epl_shooting_var_ranks <- epl_shooting_rank_full %>% 
+  select(-c(1:12)) %>%
+  mutate(type = c("max", "min","player")) %>%
+  pivot_longer(cols = c(1:12), names_to = "rankVar", values_to = "rankVal") %>%
+  group_by(rankVar) %>%
+  mutate(rank.scaled = (rankVal/ (max(rankVal)))) %>%
+  filter(type == "player")
+  
+epl_shooting_rank_final <- bind_cols(epl_shooting_var_vals, epl_shooting_var_ranks) %>%
+  pivot_wider(names_from = variable, values_from = value) %>%
+  rename(Goals = Gls,
+         Shots = Sh,
+         `Shots on Target` = SoT,
+         `Shots on Target%` = `SoT%`,
+         `Goals/Shot` = `G/Sh`,
+         `Goals/Shot on Target` = `G/SoT`,
+         Distance = Dist,
+         `Non Penalty: xGoals/Shot` = `npxG/Sh`,
+         `Non Penalty: Goals - xGoals` = `np:G-xG`,
+         `Goals - xGoals` = `G-xG`,
+         `Non Penalty xGoals` = npxG,
+         `xGoals` = xG) %>%
+  pivot_longer(c(5:16), names_to = "variable", values_to = "value") %>%
+  filter(!is.na(value)) %>%
+  arrange(match(variable, c("Goals",
+                            "Shots",
+                            "Goals/Shot",
+                            "Shots on Target",
+                            "Shots on Target%",
+                            "Goals/Shot on Target",
+                            "Distance",
+                            "Non Penalty: xGoals/Shot",
+                            "Non Penalty: Goals - xGoals",
+                            "Non Penalty xGoals",
+                            "Goals - xGoals",
+                            "xGoals"))) 
+
+shooting_rank_plot <- highchart() %>%
+  hc_chart(polar = TRUE) %>%
+  hc_add_theme(hc_theme_db()) %>%
+  hc_xAxis(categories = epl_shoot_full_scaled$variable) %>%
+  hc_yAxis(tickAmount = 5,
+           max = 1,
+           tickPixelInterval = 0.01,
+           shared = TRUE) %>%
+  hc_title(text = epl_shooting_rank_player$Name,
+           align = "center") %>%
+  hc_subtitle(text = epl_shooting_rank_player$Squad,
+              align = "center") %>%
+  hc_add_series(data = shooting_descr,
+                mapping = hcaes(x = variable, y = 1),
+                type = "scatter",
+                tooltip = list(headerFormat = "", pointFormat = "{point.description}"),
+                animation = FALSE,
+                showInLegend = FALSE) %>%  
+  hc_add_series(data = epl_shooting_rank_final, 
+                mapping = hcaes(x = variable, y = rank.scaled), 
+                type = "column",
+                tooltip = list(headFormat = "{point.variable}", pointFormat = "{point.value}"),
+                showInLegend = FALSE,
+                pointWidth = 0.5,
+                borderColor = "darkgrey",
+                borderWidth = .2) 
 ```
 
 ```{r}
@@ -240,7 +333,6 @@ shooting_90_plot <- highchart() %>%
            align = "center") %>%
   hc_subtitle(text = epl_shoot_90_player$Squad,
               align = "center")
-shooting_90_plot
 ```
 
 ```{r}
@@ -257,13 +349,11 @@ epl_passing <- read_csv("data/epl_passing.csv") %>%
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
-epl_passing 
 
 epl_passing_90 <- read_csv("data/epl_passing_90.csv", skip = 1) %>% 
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
-epl_passing_90 
 ```
 
 ```{r}
@@ -276,13 +366,11 @@ epl_passtype <- read_csv("data/epl_passtypes.csv", skip = 1) %>%
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
-epl_passtype
 
 epl_passtype_90 <- read_csv("data/epl_passtypes_90.csv", skip = 1) %>% 
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
-epl_passtype_90
 ```
 
 ```{r}
@@ -290,13 +378,11 @@ epl_goalandshotcreation <- read_csv("data/epl_goalandshotcreation.csv", skip = 1
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
-epl_goalandshotcreation 
 
 epl_goalandshotcreation_90 <- read_csv("data/epl_goalandshotcreation_90.csv", skip = 1) %>% 
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
-epl_goalandshotcreation_90 
 ```
  
 ```{r}
@@ -405,7 +491,6 @@ passing_plot <- highchart() %>%
            align = "center") %>%
   hc_subtitle(text = epl_pass_player$Squad,
               align = "center")
-passing_plot
 ```
 
 ```{r}
@@ -523,7 +608,6 @@ passing_90_plot <- highchart() %>%
            align = "center") %>%
   hc_subtitle(text = epl_pass_90_player$Squad,
               align = "center")
-passing_90_plot
 ```
 
 ```{r}
@@ -539,13 +623,11 @@ epl_defensiveactions <- read_csv("data/epl_defensiveactions.csv", skip = 1) %>%
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
-epl_defensiveactions
 
 epl_defensiveactions_90 <- read_csv("data/epl_defensiveactions_90.csv", skip = 1) %>% 
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
-epl_defensiveactions_90
 ``` 
 
 ```{r}
@@ -645,7 +727,6 @@ def_plot <- highchart() %>%
            align = "center") %>%
   hc_subtitle(text = epl_def_player$Squad,
               align = "center") 
-def_plot
 ```
 
 ```{r}
@@ -756,7 +837,6 @@ def_90_plot <- highchart() %>%
            align = "center") %>%
   hc_subtitle(text = epl_def_90_player$Squad,
               align = "center")
-def_90_plot
 ```
 
 ```{r}
@@ -773,13 +853,11 @@ epl_possesion <- read_csv("data/epl_possesion.csv", skip = 1) %>%
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
-epl_possesion
 
 epl_possesion_90 <- read_csv("data/epl_possesion_90.csv", skip = 1) %>%
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
-epl_possesion_90
 ```
 
 ```{r}
@@ -787,13 +865,11 @@ epl_miscellaneous <- read_csv("data/epl_miscellaneous.csv", skip = 1) %>%
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
-epl_miscellaneous
 
 epl_miscellaneous_90 <- read_csv("data/epl_miscellaneous_90.csv", skip = 1) %>% 
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
-epl_miscellaneous_90
 ```
 
 ```{r}
@@ -897,7 +973,6 @@ poss_plot <- highchart() %>%
            align = "center") %>%
   hc_subtitle(text = epl_poss_player$Squad,
               align = "center")
-poss_plot
 ```
 
 ```{r}
@@ -1010,7 +1085,7 @@ poss_90_plot <- highchart() %>%
            align = "center") %>%
   hc_subtitle(text = epl_poss_90_player$Squad,
               align = "center")
-poss_90_plot
+
 ```
 
 ```{r}
@@ -1102,9 +1177,8 @@ drib_plot <- highchart() %>%
            align = "center") %>%
   hc_subtitle(text = epl_drib_player$Squad,
               align = "center")
-drib_plot
 ```
-
+ 
 ```{r}
 epl_drib_table <- epl_drib_full_scaled %>% select(variable, value, value.scaled) %>%
   rename(Stat = variable,
@@ -1195,7 +1269,6 @@ drib_90_plot <- highchart() %>%
            align = "center") %>%
   hc_subtitle(text = epl_drib_90_player$Squad,
               align = "center")
-drib_90_plot
 ```
 
 ```{r}
@@ -1212,13 +1285,11 @@ epl_goalkeeper <- read_csv("data/epl_goalkeeper.csv", skip = 1) %>%
   select(-c(3, Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
-epl_goalkeeper
 
 epl_goalkeeper_90 <- read_csv("data/epl_goalkeeper_90.csv", skip = 1) %>% 
   select(-c(Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
-epl_goalkeeper_90
 ```
 
 ```{r}
@@ -1232,7 +1303,6 @@ epl_goalkeeperadvanced_90 <- read_csv("data/epl_goalkeeperadvanced_90.csv", skip
   select(-c(Matches)) %>%
   separate(Nation, into = c("irrel", "Nation"), sep = " ") %>%
   select(-c(irrel))
-epl_goalkeeperadvanced_90
 ```
 
 ```{r}
@@ -1312,7 +1382,6 @@ gk_dist_plot <- highchart() %>%
            align = "center") %>%
   hc_subtitle(text = epl_gk_dist_player$Squad,
               align = "center")
-gk_dist_plot
 ```
 
 ```{r}
@@ -1390,7 +1459,6 @@ gk_dist_90_plot <- highchart() %>%
            align = "center") %>%
   hc_subtitle(text = epl_gk_dist_90_player$Squad,
               align = "center")
-gk_dist_90_plot
 ```
 
 ```{r}
@@ -1474,7 +1542,6 @@ gk_base_plot <- highchart() %>%
            align = "center") %>%
   hc_subtitle(text = epl_gk_base_player$Squad,
               align = "center")
-gk_base_plot
 ```
 
 ```{r}
@@ -1558,7 +1625,6 @@ gk_90_base_plot <- highchart() %>%
            align = "center") %>%
   hc_subtitle(text = epl_gk_90_base_player$Squad,
               align = "center")
-gk_90_base_plot
 ```
 
 ```{r}
@@ -1589,18 +1655,6 @@ kable(epl_gk_90_base_table, digits = 3, title = "Goalkeeping per 90 Minutes")
 
 
 
-```{r}
-my_theme <- hc_theme(
-      chart = list(
-        backgroundColor = "#f4fcfe", 
-        style = list(
-          fontFamily = "Montserrat"
-        )
-      )
-)
-
-```
-
 
 
 
@@ -1614,15 +1668,21 @@ my_theme <- hc_theme(
 
 ```{r}
 library(shiny)
+library(shinyWidgets)
 
 ui <- fluidPage(
-  sidebarLayout(sidebarPanel(
-    selectizeInput("playerchoice",
-                   label = "Choose a Player",
-                   choices = levels(factor(epl_standard$Name)))
+  sidebarLayout(
+    sidebarPanel(
+     selectizeInput("playerchoice",
+                     label = "Choose a Player",
+                     choices = levels(factor(epl_standard$Name)))
+    
   ),
   mainPanel(
-    checkboxInput("check90", "per 90 min", FALSE),
+    submitButton("Update", icon("refresh"), width = 1150),
+    verbatimTextOutput("text"),
+    prettyCheckbox("check90", "per 90 min", FALSE, inline = TRUE),
+    prettyCheckbox("checkPOS", "position", FALSE, inline = TRUE),
     tabsetPanel(
       tabPanel("Shooting", 
                highchartOutput("shootPlot", height = "80vh"),
@@ -1636,14 +1696,65 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   
-  
+  output$text <- renderText({
+    paste("Filters:")
+  })
   
   ##SHOOTING
+  epl_shooting_max <- reactive({
+    if (input$checkPOS == FALSE) {
+      epl_shooting %>%
+      drop_na() %>%
+      filter(`90s` >= 4,
+             Pos != "GK") %>% 
+      summarise_if(is.numeric, max)
+  }
+    else {
+      pos_max <- left_join(epl_shooting %>% drop_na(), epl_positions) %>%
+        filter(`90s` >= 4,
+               Pos != "GK") %>% 
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position") 
+      player_pos <- left_join(epl_standard, epl_positions) %>% 
+        filter(Name == input$playerchoice) %>%
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position") %>%
+        filter(!is.na(position))
+      semi_join(pos_max, player_pos, by = c("position" = "position")) %>%
+      pivot_wider(names_from = "type", values_from = "position") %>%
+      summarise_if(is.numeric, max)
+    }
+  })
+  
+  epl_shooting_min <- reactive({ 
+    if (input$checkPOS == FALSE) {
+      epl_shooting %>% 
+      drop_na() %>%
+      filter(`90s` >= 4,
+             Pos != "GK") %>%
+      summarise_if(is.numeric, min)
+    }
+    else {
+      pos_min <- left_join(epl_shooting %>% drop_na(), epl_positions) %>%
+        filter(`90s` >= 4,
+               Pos != "GK") %>% 
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position")
+      player_pos <- left_join(epl_standard, epl_positions) %>% 
+        filter(Name == input$playerchoice) %>%
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position") %>%
+        filter(!is.na(position))
+      semi_join(pos_min, player_pos, by = c("position" = "position")) %>%
+      pivot_wider(names_from = "type", values_from = "position") %>%
+      summarise_if(is.numeric, min)
+    }
+    })
+ 
+  epl_shooting_max_min <- reactive({
+    bind_rows(epl_shooting_max(), epl_shooting_min())
+    })
   epl_shoot_player <- reactive({
       epl_shooting %>% filter(Name == input$playerchoice)
     })
   epl_shoot_full <- reactive({
-    bind_rows(epl_shooting_max_min, epl_shoot_player()) %>%
+    bind_rows(epl_shooting_max_min(), epl_shoot_player()) %>%
       select(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`, FK, PKatt, PK))
     })
   epl_shoot_full_scaled <- reactive({ 
@@ -1730,11 +1841,58 @@ server <- function(input, output, session) {
   })
   
   ## Shooting 90
+   epl_shooting_90_max <- reactive({
+    if (input$checkPOS == FALSE) {
+      epl_shooting_90 %>%
+      drop_na() %>%
+      filter(`90s` >= 4,
+             Pos != "GK") %>% 
+      summarise_if(is.numeric, max)
+  }
+    else {
+      pos_max <- left_join(epl_shooting_90 %>% drop_na(), epl_positions) %>%
+        filter(`90s` >= 4,
+               Pos != "GK") %>% 
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position") 
+      player_pos <- left_join(epl_standard, epl_positions) %>% 
+        filter(Name == input$playerchoice) %>%
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position") %>%
+        filter(!is.na(position))
+      semi_join(pos_max, player_pos, by = c("position" = "position")) %>%
+      pivot_wider(names_from = "type", values_from = "position") %>%
+      summarise_if(is.numeric, max)
+    }
+  })
+  epl_shooting_90_min <- reactive({ 
+    if (input$checkPOS == FALSE) {
+      epl_shooting_90 %>% 
+      drop_na() %>%
+      filter(`90s` >= 4,
+             Pos != "GK") %>%
+      summarise_if(is.numeric, min)
+    }
+    else {
+      pos_min <- left_join(epl_shooting_90 %>% drop_na(), epl_positions) %>%
+        filter(`90s` >= 4,
+               Pos != "GK") %>% 
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position")
+      player_pos <- left_join(epl_standard, epl_positions) %>% 
+        filter(Name == input$playerchoice) %>%
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position") %>%
+        filter(!is.na(position))
+      semi_join(pos_min, player_pos, by = c("position" = "position")) %>%
+      pivot_wider(names_from = "type", values_from = "position") %>%
+      summarise_if(is.numeric, min)
+    }
+    })
+  epl_shooting_90_max_min <- reactive({
+    bind_rows(epl_shooting_90_max(), epl_shooting_90_min())
+    })
   epl_shoot_90_player <- reactive({
     epl_shooting_90 %>% filter(Name == input$playerchoice)
   })
   epl_shoot_90_full <- reactive({
-    bind_rows(epl_shooting_90_max_min, epl_shoot_90_player()) %>%
+    bind_rows(epl_shooting_90_max_min(), epl_shoot_90_player()) %>%
     select(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`, FK, PKatt, PK))
   })
   epl_shoot_90_full_scaled <- reactive({
@@ -1828,11 +1986,60 @@ server <- function(input, output, session) {
   
   
   ## PASSING
+  epl_passing_max <- reactive({
+    if (input$checkPOS == FALSE) {
+      epl_passing_main%>%
+      drop_na() %>%
+      filter(`90s` >= 4,
+             Pos != "GK") %>% 
+      summarise_if(is.numeric, max)
+  }
+    else {
+      pos_max <- left_join(epl_passing_main %>% drop_na(), epl_positions) %>%
+        filter(`90s` >= 4,
+               Pos != "GK") %>% 
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position") 
+      player_pos <- left_join(epl_standard, epl_positions) %>% 
+        filter(Name == input$playerchoice) %>%
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position") %>%
+        filter(!is.na(position))
+      semi_join(pos_max, player_pos, by = c("position" = "position")) %>%
+      pivot_wider(names_from = "type", values_from = "position") %>%
+      summarise_if(is.numeric, max)
+    }
+  })
+  
+  epl_passing_min <- reactive({ 
+    if (input$checkPOS == FALSE) {
+      epl_passing_main %>% 
+      drop_na() %>%
+      filter(`90s` >= 4,
+             Pos != "GK") %>%
+      summarise_if(is.numeric, min)
+    }
+    else {
+      pos_min <- left_join(epl_passing_main %>% drop_na(), epl_positions) %>%
+        filter(`90s` >= 4,
+               Pos != "GK") %>% 
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position")
+      player_pos <- left_join(epl_standard, epl_positions) %>% 
+        filter(Name == input$playerchoice) %>%
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position") %>%
+        filter(!is.na(position))
+      semi_join(pos_min, player_pos, by = c("position" = "position")) %>%
+      pivot_wider(names_from = "type", values_from = "position") %>%
+      summarise_if(is.numeric, min)
+    }
+    })
+ 
+  epl_passing_main_max_min <- reactive({
+    bind_rows(epl_passing_max(), epl_passing_min())
+    })
   epl_pass_player <- reactive({
     epl_passing_main %>% filter(Name == input$playerchoice)
   })
   epl_pass_full <- reactive({
-    bind_rows(epl_passing_main_max_min, epl_pass_player()) %>%
+    bind_rows(epl_passing_main_max_min(), epl_pass_player()) %>%
     select(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`))
   })
   epl_pass_full_scaled <- reactive({
@@ -1925,11 +2132,58 @@ server <- function(input, output, session) {
   })
   
   ## Passing 90
+   epl_passing_90_max <- reactive({
+    if (input$checkPOS == FALSE) {
+      epl_passing_90_main %>%
+      drop_na() %>%
+      filter(`90s` >= 4,
+             Pos != "GK") %>% 
+      summarise_if(is.numeric, max)
+  }
+    else {
+      pos_max <- left_join(epl_passing_90_main %>% drop_na(), epl_positions) %>%
+        filter(`90s` >= 4,
+               Pos != "GK") %>% 
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position") 
+      player_pos <- left_join(epl_standard, epl_positions) %>% 
+        filter(Name == input$playerchoice) %>%
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position") %>%
+        filter(!is.na(position))
+      semi_join(pos_max, player_pos, by = c("position" = "position")) %>%
+      pivot_wider(names_from = "type", values_from = "position") %>%
+      summarise_if(is.numeric, max)
+    }
+  })
+  epl_passing_90_min <- reactive({ 
+    if (input$checkPOS == FALSE) {
+      epl_passing_90_main %>% 
+      drop_na() %>%
+      filter(`90s` >= 4,
+             Pos != "GK") %>%
+      summarise_if(is.numeric, min)
+    }
+    else {
+      pos_min <- left_join(epl_passing_90_main %>% drop_na(), epl_positions) %>%
+        filter(`90s` >= 4,
+               Pos != "GK") %>% 
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position")
+      player_pos <- left_join(epl_standard, epl_positions) %>% 
+        filter(Name == input$playerchoice) %>%
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position") %>%
+        filter(!is.na(position))
+      semi_join(pos_min, player_pos, by = c("position" = "position")) %>%
+      pivot_wider(names_from = "type", values_from = "position") %>%
+      summarise_if(is.numeric, min)
+    }
+    })
+  epl_passing_90_main_max_min <- reactive({
+    bind_rows(epl_passing_90_max(), epl_passing_90_min())
+    })
   epl_pass_90_player <- reactive({ 
     epl_passing_90_main %>% filter(Name == input$playerchoice)
   })
   epl_pass_90_full <- reactive({
-    bind_rows(epl_passing_90_main_max_min, epl_pass_90_player()) %>%
+    bind_rows(epl_passing_90_main_max_min(), epl_pass_90_player()) %>%
     select(-c(Age, Squad, Pos, Nation, Name, Rk, Born, `90s`))
   })
   epl_pass_90_full_scaled <- reactive({
@@ -2045,6 +2299,31 @@ shinyApp(ui, server)
 
 
 
+```{r}
+pos_min <- left_join(epl_shooting %>% drop_na(), epl_positions) %>%
+        filter(`90s` >= 4,
+               Pos != "GK") %>% 
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position")
+      player_pos <- left_join(epl_standard, epl_positions) %>% 
+        filter(Name == "Cristiano Ronaldo") %>%
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position") %>%
+        filter(!is.na(position))
+      semi_join(pos_min, player_pos, by = c("position" = "position")) %>%
+      pivot_wider(names_from = "type", values_from = "position") %>%
+      summarise_if(is.numeric, min)
+      
+pos_max <- left_join(epl_shooting %>% drop_na(), epl_positions) %>%
+        filter(`90s` >= 4,
+               Pos != "GK") %>% 
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position")
+      player_pos <- left_join(epl_standard, epl_positions) %>% 
+        filter(Name == "Cristiano Ronaldo") %>%
+        pivot_longer(cols = c(Pos1, Pos2, Pos3), names_to = "type", values_to = "position") %>%
+        filter(!is.na(position))
+      semi_join(pos_max, player_pos, by = c("position" = "position")) %>%
+      pivot_wider(names_from = "type", values_from = "position") %>%
+      summarise_if(is.numeric, max)
+```
 
   
 
