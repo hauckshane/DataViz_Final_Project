@@ -200,7 +200,7 @@ epl_shooting_rank_final <- bind_cols(epl_shooting_var_vals, epl_shooting_var_ran
          `Goals/Shot on Target` = `G/SoT`,
          Distance = Dist,
          `Non Penalty: xGoals/Shot` = `npxG/Sh`,
-         `Non Penalty: Goals - xGoals` = `np:G-xG`,
+         `Non Penalty: Goals - xGoals` = `np:G-xG`, 
          `Goals - xGoals` = `G-xG`,
          `Non Penalty xGoals` = npxG,
          `xGoals` = xG) %>%
@@ -1689,13 +1689,20 @@ kable(epl_gk_90_base_table, digits = 3, title = "Goalkeeping per 90 Minutes")
 ```{r}
 library(shiny)
 library(shinyWidgets)
+library(shinyjs)
 
 ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
+      
      selectizeInput("playerchoice",
                      label = "Choose a Player",
-                     choices = levels(factor(epl_standard$Name)))
+                     choices = levels(factor(epl_standard$Name))),
+     useShinyjs(),
+     checkboxInput("check2nd", "Add second player:", FALSE),
+     selectizeInput("playerchoice2",
+                             label = "Choose a Player",
+                             choices = levels(factor(epl_standard$Name)))
     
   ),
   mainPanel(
@@ -1704,6 +1711,7 @@ ui <- fluidPage(
     prettyCheckbox("check90", "per 90 min", FALSE, inline = TRUE),
     prettyCheckbox("checkPOS", "position", FALSE, inline = TRUE),
     prettyCheckbox("checkRank", "rank", FALSE, inline = TRUE),
+    prettyCheckbox("checkColAr", "area", FALSE, inline = TRUE),
     sliderInput("value90s", "Compared to minimum 90s played:", min = 0, max = 25, value = 4, width = 1175),
     tabsetPanel(
       tabPanel("Shooting", 
@@ -1717,6 +1725,12 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
+  
+  observeEvent(input$check2nd, {
+    if (input$check2nd == TRUE) {
+      enable("playerchoice2")
+    } else {disable("playerchoice2")}
+  })
   
   output$text <- renderText({
     paste("Filters:")

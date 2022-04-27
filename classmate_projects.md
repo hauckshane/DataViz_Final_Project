@@ -3,7 +3,7 @@
 Charlie: Creating an r package that will help users create graphs and animations based on hockey data. 
 
 ## March 23 
-
+ 
 Nick: Using real estate data from Boston to create something that will help users when buying a house. 
  
 ## March 28
@@ -33,3 +33,7 @@ Casey: Creating a shiny app showcasing swimming data from world cup and olympics
 ## April 25
 
 Tom: Working on an R package to help users visualize covid data.
+
+## April 27
+
+Johnathan: Created a blogdown post that display various projects he has worked on.

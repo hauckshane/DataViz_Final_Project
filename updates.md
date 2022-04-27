@@ -70,10 +70,14 @@ Added a check button to switch between regular and per 90 min graphs and tables 
 
 Added a check button that filters how a players graph will be compared to only players that play their position. Also created a way that will graph players on their ranking of each variable instead of the values themselves.
 
-## April 25 end of class
+## April 25 end of class 
 
 Worked on adding a check button to compare the graphs by rank.
 
 ## April 27 beginning of class
 
 Finished adding the check button to compare the graphs by rank and figured out how to make tables that are colored by a scaled value.
+
+## April 27 end of class
+
+Added a button that will allow users to add a second player to compare and began working on a button that will switch the type of graph fro column to area.
