@@ -42,7 +42,7 @@ Fixed and got all per 90 minute datasets into r and worked on making shooting an
 
 Worked on creating passing radar chart.
 
-## April 11 
+## April 11  
 
 Figured out how to make interactive radar charts with the highcharter package and then created plots for passing and defensive stats (both total and per 90 minutes). 
 
@@ -73,3 +73,7 @@ Added a check button that filters how a players graph will be compared to only p
 ## April 25 end of class
 
 Worked on adding a check button to compare the graphs by rank.
+
+## April 27 beginning of class
+
+Finished adding the check button to compare the graphs by rank and figured out how to make tables that are colored by a scaled value.
