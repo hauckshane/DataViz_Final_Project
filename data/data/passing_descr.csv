@@ -1,0 +1,22 @@
+variable,description
+Completions,Passes Completed
+Attempts,Passes Attempted
+Completion %,Pass Completion Percentage
+Short Completions,Passes Completed Between 5 and 15 yards
+Short Completion %,Pass Completion Percentage for passes between 5 and 15 yards
+Medium Completions,Passes Completed Between 15 and 30 yards
+Medium Completion %,Pass Completion Percentage for passes between 15 and 30 yards
+Long Completions,Passes Completed Longer than 30 yards
+Long Completion %,Pass Completion Percentage for passes longer than 30 yards
+Progressive Completions,"Completed passes that move the ball towards the opponent's goal at least 10 yards from its furthest point in the last six passes, or any completed pass into the penalty area. Excludes passes from the defending 40% of the pitch"
+Switches,Passes that travel more than 40 yards of the width of the pitch
+Pressure,Passes made while under pressure from opponent
+Through Balls,Completed pass sent between back defenders into open space
+Completions into Final 3rd,Completed passes that enter the 1/3 of the pitch closest to the goal (not including set pieces)
+Completions into Penalty Area, Completed passes into the 18-yard box (not including set pieces)
+Crosses,Completed crosses into the 18-yard box
+Key Passes,Passes that directly lead to a shot (assisted shots)
+Shot Creating Passes,"Passes that are within the two offensive actions(passes, dribbles and drawing fouls) that lead directly to a shot"
+Goal Creating Passes,"Passes that are within the two offensive actions(passes, dribbles and drawing fouls) that lead directly to a goal"
+xAssists,Expected Assists: expected goals which follows a pass that assists a shot
+Assists,Assists

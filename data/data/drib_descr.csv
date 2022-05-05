@@ -1,0 +1,16 @@
+variable,description
+Successful Dribbles,Dribbles Completed Successfully
+Attempted Dribbles,Dribbles Attempted
+Successful Dribble %,Percentage of Dribbles Completed Successfully
+Dribbled Past,Number of Players Dribbled Past
+Shot Creating Dribbles,Successful dribbles that lead to a shot attempt
+Fouled,Fouls Drawn
+Nutmegs,Number of times a player dribbled the ball through an opposing player's legs
+Dispossessed,Number of times a player loses control of the ball after be
+Miscontrol,Number of times a player failed when attempting to gain control of a ball
+Carries into Penalty Area,Carries into the 18-yard box
+Carries into Attacking 3rd,Carries that enter the 1/3 of the pitch closest to the goal
+Total Distance Carried,"Total distance, in yards, a player moved the ball while controlling it with their feet, in any direction"
+Progressive Distance Carried,"Total distance, in yards, a player moved the ball while controlling it with their feet towards the opponent's goal"
+Progressive Carries,"Carries that move the ball towards the opponent's goal at least 5 yards, or any carry into the penalty area. Excludes carries from the defending 40% of the pitch"
+Carries,Number of times the player controlled the ball with their feet

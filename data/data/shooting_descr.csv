@@ -1,0 +1,13 @@
+variable,description
+Goals,Goals scored
+Shots,Shots total (does not include penalty kicks)
+Goals/Shot,Goals per shot
+Shots on Target,Shots on target (does not include penalty kicks)
+Shots on Target%,Percentage of shots that are on target (does not include penalty kicks)
+Goals/Shot on Target,Goals per shot on target (does not include penalty kicks)
+Distance,"Average distance, in yards, from goal of all shots taken (does not include penalty kicks)"
+Non Penalty: Goals - xGoals,Non-Penalty Goals minus Non-Penalty Expected Goals
+Non Penalty: xGoals/Shot,Non-Penalty Expected Goals per shot
+Non Penalty xGoals, Non-Penalty Expected Goals
+Goals - xGoals,Goals minus Expected Goals
+xGoals,Expected Goals

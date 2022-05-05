@@ -1,0 +1,19 @@
+variable,description
+Tackles,Number of players tackled
+Tackles Won,Tackles in which the tackler's team won possession of the ball
+% of Tackles Won,Tackles won divided by tackles made
+Tackles vs Dribbles, Number of dribblers tackled
+% of Dribbles Tackled,Dribblers tackled divided by dribblers tackled plus times dribbled past
+Tackles in Attacking 3rd,Tackles in 3rd of pitch nearest opponents goal
+Tackles in Middle 3rd,Tackles in middle 3rd of the pitch
+Tackles in Defensive 3rd,Tackles in 3rd of pitch nearest teams goal
+Pressures,"Number of times applying pressure to opposing player who is receiving, carrying or releasing the ball"
+Succesful Pressures, Number of times the squad gained possession withing five seconds of applying pressure
+Succesful Pressures %,Percentage of time the squad gained possession withing five seconds of applying pressure
+Pressures in Attacking 3rd,"Number of times applying pressure to opposing player who is receiving, carrying or releasing the ball, in the attacking 3rd"
+Pressures in Middle 3rd,"Number of times applying pressure to opposing player who is receiving, carrying or releasing the ball, in the middle 3rd"
+Pressures in Defensive 3rd,"Number of times applying pressure to opposing player who is receiving, carrying or releasing the ball, in the defensive 3rd"
+Clearances,Clearances
+Blocked Shots,Number of times blocking a shot by standing in its path
+Blocked Passes, Number of times blocking a pass by standing in its path
+Interceptions,Interceptions
