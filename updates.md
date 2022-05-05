@@ -78,6 +78,14 @@ Worked on adding a check button to compare the graphs by rank.
 
 Finished adding the check button to compare the graphs by rank and figured out how to make tables that are colored by a scaled value.
 
-## April 27 end of class
+## April 27 end of class 
 
 Added a button that will allow users to add a second player to compare and began working on a button that will switch the type of graph fro column to area.
+
+## May 2 beginning of class
+
+Added a a button in the side panel to compare two players and also created an image for the players image, club logo and nation flag to show. Also created the datasets for the overall ranking graph.
+
+## May 4
+
+Created a new graph and table for the overall scalings of players. Added all tabs to the app (Overall, Passing, Dribbling, Defending, Possesion) and made them all with interactive graphs and tables the same way that the shooting tab is. Added a table to the side panel feauturing information about selects player(s). Made interactive graph that feature 2 players headshot, club logo and nation flag. Changed shiny background color. 
